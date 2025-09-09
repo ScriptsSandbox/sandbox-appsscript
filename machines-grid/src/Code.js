@@ -11,7 +11,7 @@ const CONFIG = {
     danger:   '#EF4444',
     access:   '#00C6D7',
     text:     '#0f172a',
-    card:     '#ffffff',
+    card:     '#800080',
     cardEdge: '#e5e7eb'
   }
 };
