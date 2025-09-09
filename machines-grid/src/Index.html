@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Machines Grid</title>
+  <style>
+    :root{
+      --page-grey: <?= brand.pageGrey ?>;
+      --ok:        <?= brand.ok ?>;
+      --warn:      <?= brand.warn ?>;
+      --danger:    <?= brand.danger ?>;
+      --access:    <?= brand.access ?>;
+      --text:      <?= brand.text ?>;
+      --card:      <?= brand.card ?>;
+      --card-edge: <?= brand.cardEdge ?>;
+    }
+    html,body{margin:0;padding:0;background:var(--page-grey);color:var(--text);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px 16px 48px}
+    .toolbar{
+      display:grid; gap:12px; grid-template-columns: 1fr repeat(4, minmax(0, 180px));
+      background:#ffffffaa; backdrop-filter: blur(6px);
+      padding:12px; border-radius:16px; border:1px solid var(--card-edge);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .toolbar input, .toolbar select, .toolbar button{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--card-edge); background:#fff
+    }
+    .toolbar button{cursor:pointer; border-color: transparent; background:#111827; color:#fff}
+    .grid{
+      margin-top:16px;
+      display:grid; gap:16px;
+      grid-template-columns: repeat(auto-fill, minmax(260px,1fr));
+    }
+    .card{
+      display:flex; flex-direction:column; background:var(--card); border:1px solid var(--card-edge);
+      border-radius:16px; overflow:hidden;
+      box-shadow: 0 10px 14px rgba(0,0,0,.06);
+    }
+    .thumb{aspect-ratio: 16/9; background:#f1f5f9; display:block; width:100%; object-fit:cover}
+    .pad{padding:14px}
+    .name{font-weight:700; font-size:1.05rem; margin:0 0 6px 0}
+    .muted{color:#475569; font-size:.9rem}
+    .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+    .chip{font-size:.75rem; padding:4px 8px; border-radius:999px; border:1px solid #0000}
+    .chip.status{color:#0b0b0b; background:#eefbf1; border-color:#00000010}
+    .chip.haz{color:#0b0b0b; background:#fff; border-color:#00000020}
+    .chip.access{color:#0b0b0b; background:#ecfeff; border:1px solid #00000010}
+    .row{display:flex; gap:8px; align-items:center; margin-top:6px}
+    .row strong{font-weight:600}
+    .actions{margin-top:auto; display:flex; gap:8px; padding:12px; border-top:1px solid var(--card-edge)}
+    .btn{flex:1; text-align:center; text-decoration:none; padding:10px 12px; border-radius:10px; border:1px solid var(--card-edge); background:#fff; color:#111827}
+    .btn.primary{background:#111827; color:#fff; border-color:transparent}
+    .count{margin:12px 4px; color:#1f2937}
+    /* tiny helper for status color bars */
+    .bar{height:4px; width:100%}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <input id="q" type="search" placeholder="Search machines, tags, specs…" />
+      <select id="fCategory"><option value="">All categories</option></select>
+      <select id="fLocation"><option value="">All locations</option></select>
+      <select id="fStatus">
+        <option value="">All status</option>
+        <option>Operational</option>
+        <option>Restricted</option>
+        <option>Down</option>
+      </select>
+      <select id="fHazard">
+        <option value="">All hazard</option>
+        <option value="1">Hazard 1</option>
+        <option value="2">Hazard 2</option>
+        <option value="3">Hazard 3</option>
+      </select>
+      <button id="resetBtn" type="button">Reset</button>
+    </div>
+
+    <div class="count" id="count"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script>
+    // Initial data injected server-side
+    const MACHINES = <?!= JSON.stringify(initialData) ?>;
+
+    const els = {
+      q: document.getElementById('q'),
+      fCategory: document.getElementById('fCategory'),
+      fLocation: document.getElementById('fLocation'),
+      fStatus: document.getElementById('fStatus'),
+      fHazard: document.getElementById('fHazard'),
+      resetBtn: document.getElementById('resetBtn'),
+      grid: document.getElementById('grid'),
+      count: document.getElementById('count')
+    };
+
+    // Build unique filter options
+    function uniqueSorted(list, key){
+      return [...new Set(list.map(x => (x[key]||'').toString().trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    }
+    function fillSelect(select, values){
+      values.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = v;
+        select.appendChild(opt);
+      });
+    }
+    fillSelect(els.fCategory, uniqueSorted(MACHINES, 'category'));
+    fillSelect(els.fLocation, uniqueSorted(MACHINES, 'location'));
+
+    // Filtering
+    function filterAll(){
+      const q = els.q.value.trim().toLowerCase();
+      const cat = els.fCategory.value;
+      const loc = els.fLocation.value;
+      const stat = els.fStatus.value;
+      const haz  = els.fHazard.value;
+
+      let out = MACHINES.filter(m => {
+        if (cat && m.category !== cat) return false;
+        if (loc && m.location !== loc) return false;
+        if (stat && !eqi(m.status, stat)) return false;
+        if (haz && String(m.hazard_class) !== String(haz)) return false;
+
+        if (q) {
+          const hay = [
+            m.name, m.category, m.location, m.status,
+            m.description, m.specs, (m.tags||[]).join(' ')
+          ].join(' ').toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      render(out);
+    }
+
+    function eqi(a,b){ return String(a||'').toLowerCase() === String(b||'').toLowerCase(); }
+
+    // Render
+    function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function render(list){
+      els.count.textContent = `${list.length} machine${list.length===1?'':'s'} shown`;
+      const html = list.map(m => {
+        const chips = [
+          `<span class="chip status" style="background:${tint(m.status_color,0.12)};border-color:${tint(m.status_color,0.2)}">Status: ${esc(m.status||'—')}</span>`,
+          (m.hazard_class ? `<span class="chip haz" style="background:${tint(m.hazard_color,0.10)};border-color:${tint(m.hazard_color,0.2)}">Hazard ${esc(m.hazard_class)}</span>` : ''),
+          ...((m.access_chips||[]).map(c => `<span class="chip access" style="background:${tint('var(--access)',0.10)};border-color:${tint('var(--access)',0.2)}">${esc(c)}</span>`))
+        ].join('');
+        const thumb = m.thumbnail_url ? `<img class="thumb" alt="" loading="lazy" src="${esc(m.thumbnail_url)}">` : `<div class="thumb"></div>`;
+        const link  = m.detail_url ? `<a class="btn" href="${esc(m.detail_url)}" target="_blank" rel="noopener">Details</a>` : '';
+        return `
+          <article class="card" aria-label="${esc(m.name)}">
+            ${thumb}
+            <div class="bar" style="background:${esc(m.status_color)}"></div>
+            <div class="pad">
+              <h3 class="name">${esc(m.name)}</h3>
+              <div class="muted">${esc(m.category || '')}${m.category && m.location ? ' · ' : ''}${esc(m.location || '')}</div>
+              <div class="chips">${chips}</div>
+              ${m.description ? `<div class="row"><span class="muted">${esc(m.description)}</span></div>` : ''}
+              ${m.specs ? `<div class="row"><strong>Specs:</strong><span class="muted" style="white-space:pre-wrap">${esc(m.specs)}</span></div>` : ''}
+            </div>
+            <div class="actions">
+              ${link}
+              <a class="btn primary" href="javascript:void(0)" onclick="alert('Contact staff to use this tool.');">Get Access</a>
+            </div>
+          </article>`;
+      }).join('');
+      els.grid.innerHTML = html || `<div class="muted">No machines match your filters.</div>`;
+      // Try to resize iframe height for hosts that listen
+      tryPostHeight();
+    }
+
+    // Simple color tint (accepts CSS var or hex)
+    function tint(color, alpha){
+      if (String(color).startsWith('var(')) return `color-mix(in srgb, ${color} ${Math.round((1-alpha)*100)}%, white)`;
+      // hex -> rgba
+      const hex = String(color||'').replace('#','');
+      if (hex.length === 6) {
+        const r = parseInt(hex.slice(0,2),16);
+        const g = parseInt(hex.slice(2,4),16);
+        const b = parseInt(hex.slice(4,6),16);
+        return `rgba(${r},${g},${b},${alpha})`;
+      }
+      return color;
+    }
+
+    // Listeners
+    [els.q, els.fCategory, els.fLocation, els.fStatus, els.fHazard].forEach(el => el.addEventListener('input', filterAll));
+    els.resetBtn.addEventListener('click', () => {
+      els.q.value = '';
+      [els.fCategory, els.fLocation, els.fStatus, els.fHazard].forEach(s => s.value = '');
+      filterAll();
+    });
+
+    function tryPostHeight(){
+      if (!window.parent) return;
+      const h = document.documentElement.scrollHeight;
+      window.parent.postMessage({type:'machines-grid-height', height:h}, '*');
+    }
+    window.addEventListener('load', () => { render(MACHINES); setTimeout(tryPostHeight, 200); });
+    window.addEventListener('resize', () => { tryPostHeight(); });
+  </script>
+</body>
+</html>
