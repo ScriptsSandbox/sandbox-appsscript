@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sandbox Staff Availability</title>
+  <style>
+    :root{
+      --page-grey:#f3f4f6; --text:#0f172a; --muted:#475569;
+      --card:#ffffff; --edge:#e5e7eb; --accent:#00C6D7; --ok:#22C55E; --warn:#F59E0B; --bad:#EF4444;
+    }
+    html,body{margin:0;padding:0;background:var(--page-grey);color:var(--text);font:16px/1.45 system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px 16px 48px}
+    .hdr{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .hdr h1{font-size:1.25rem;margin:0}
+    .muted{color:var(--muted)}
+    .card{background:var(--card);border:1px solid var(--edge);border-radius:14px;box-shadow:0 6px 12px rgba(0,0,0,.04)}
+    .pad{padding:14px}
+    .now-list{display:grid;gap:8px}
+    .chip{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid var(--edge);font-size:.78rem;background:#fff;margin-left:6px}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:.78rem;background:#ecfeff;border:1px solid #0001;margin-left:6px}
+    .row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .filters{display:flex;flex-wrap:wrap;gap:8px}
+    select,input{padding:8px 10px;border-radius:10px;border:1px solid var(--edge);background:#fff}
+    .days{display:grid;gap:12px;margin-top:12px}
+    .day{padding:12px;border:1px solid var(--edge);border-radius:12px;background:#fff}
+    .day h3{margin:0 0 6px 0;font-size:1rem}
+    .slot{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px;border:1px solid var(--edge);border-radius:10px;margin:6px 0}
+    .name{font-weight:600}
+    .bad{color:#fff;background:var(--bad);border-color:transparent}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <h1>Sandbox Staff Availability</h1>
+    <div class="muted" id="updated">Updated …</div>
+  </div>
+
+  <div class="card pad">
+    <div class="row" style="margin-bottom:8px">
+      <strong>Who’s on now</strong>
+      <div class="filters">
+        <input id="q" type="search" placeholder="Search name or skill"/>
+        <select id="loc"><option value="">All locations</option></select>
+      </div>
+    </div>
+    <div class="now-list" id="nowList"></div>
+  </div>
+
+  <div style="height:12px"></div>
+
+  <div class="card pad">
+    <div class="row" style="margin-bottom:8px">
+      <strong>This week + next</strong>
+      <div class="filters">
+        <select id="dayfilter">
+          <option value="">All days</option>
+          <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
+          <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+        </select>
+      </div>
+    </div>
+    <div class="days" id="days"></div>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const els = {
+    updated: document.getElementById('updated'),
+    nowList: document.getElementById('nowList'),
+    q: document.getElementById('q'),
+    loc: document.getElementById('loc'),
+    days: document.getElementById('days'),
+    dayfilter: document.getElementById('dayfilter')
+  };
+
+  const data = await fetch('./../data/availability.json', {cache:'no-cache'}).then(r=>r.json());
+  const tz = data.tz || 'America/Los_Angeles';
+
+  const people = data.people || [];
+  const allLocs = [...new Set(people.map(p=>p.location).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  allLocs.forEach(l => { const o=document.createElement('option'); o.value=l; o.textContent=l; els.loc.appendChild(o); });
+
+  const fmtDate = (ms, opts) => new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(new Date(ms));
+  const fmtTime = (iso) => new Intl.DateTimeFormat('en-US', { timeZone: tz, hour:'numeric', minute:'2-digit' }).format(new Date(iso));
+  const nowPT = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+
+  els.updated.textContent = 'Updated ' + new Intl.RelativeTimeFormat('en', {numeric:'auto'}).format(-Math.round((nowPT - new Date(data.updated))/60000), 'minute');
+
+  function personMatchesFilters(p){
+    const q = (els.q.value||'').toLowerCase();
+    const loc = els.loc.value;
+    if (loc && p.location !== loc) return false;
+    if (q) {
+      const hay = [p.name, p.location, ...(p.skills||[])].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }
+
+  function intervalsToday(p){
+    const out = [];
+    const startOfToday = new Date(new Date(nowPT).setHours(0,0,0,0));
+    const endOfToday = new Date(new Date(nowPT).setHours(23,59,59,999));
+    for (const a of (p.available||[])) {
+      const s = new Date(a.start), e = new Date(a.end);
+      if (e <= startOfToday || s >= endOfToday) continue;
+      out.push({start: new Date(Math.max(s, startOfToday)), end: new Date(Math.min(e, endOfToday))});
+    }
+    return out;
+  }
+
+  function isNowAvailable(p){
+    return (p.available||[]).some(a => (new Date(a.start) <= nowPT && new Date(a.end) > nowPT));
+  }
+
+  function renderNow(){
+    const list = people.filter(personMatchesFilters).filter(isNowAvailable);
+    if (!list.length) {
+      els.nowList.innerHTML = '<div class="muted">No one is currently on. Check the schedule below.</div>';
+      return;
+    }
+    list.sort((a,b)=>a.name.localeCompare(b.name));
+    els.nowList.innerHTML = list.map(p => {
+      const cur = (p.available||[]).find(a => new Date(a.start)<=nowPT && new Date(a.end)>nowPT);
+      const until = cur ? fmtTime(cur.end) : '';
+      const skills = (p.skills||[]).map(s => `<span class="pill">${esc(s)}</span>`).join('');
+      return `<div class="row">
+        <div><span class="name">${esc(p.name)}</span> <span class="chip">${esc(p.location||'')}</span> ${skills}</div>
+        <div class="muted">until ${esc(until)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderDays(){
+    const filterDay = els.dayfilter.value;
+    const days = [];
+    for (let d=0; d<14; d++){
+      const day = new Date(nowPT); day.setDate(day.getDate()+d); day.setHours(0,0,0,0);
+      if (filterDay!=='' && String(day.getDay())!==filterDay) continue;
+      const label = fmtDate(day, {weekday:'long', month:'short', day:'numeric'});
+      const items = [];
+      people.filter(personMatchesFilters).forEach(p=>{
+        (p.available||[]).forEach(a=>{
+          const s=new Date(a.start), e=new Date(a.end);
+          if (e<=day || s>=new Date(day.getTime()+86400000)) return;
+          const ss = fmtTime(Math.max(s, day));
+          const ee = fmtTime(Math.min(e, new Date(day.getTime()+86400000)));
+          items.push({name:p.name, loc:p.location||'', skills:p.skills||[], ss, ee, day:getDayKey_(day)});
+        });
+      });
+      items.sort((a,b)=> a.ss.localeCompare(b.ss) || a.name.localeCompare(b.name));
+      days.push({label, items});
+    }
+    els.days.innerHTML = days.map(d=>{
+      const rows = d.items.length ? d.items.map(it=>(
+        `<div class="slot">
+           <div><span class="name">${esc(it.name)}</span> <span class="chip">${esc(it.loc)}</span> ${(it.skills||[]).map(s=>`<span class="pill">${esc(s)}</span>`).join('')}</div>
+           <div class="muted">${esc(it.ss)}–${esc(it.ee)}</div>
+         </div>`
+      )).join('') : '<div class="muted">No coverage</div>';
+      return `<div class="day"><h3>${esc(d.label)}</h3>${rows}</div>`;
+    }).join('');
+  }
+
+  function getDayKey_(d){ return d.toISOString().slice(0,10); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  els.q.addEventListener('input', ()=>{ renderNow(); renderDays(); });
+  els.loc.addEventListener('input', ()=>{ renderNow(); renderDays(); });
+  els.dayfilter.addEventListener('input', ()=>{ renderDays(); });
+
+  renderNow();
+  renderDays();
+
+  // Try to auto-size iframe
+  try {
+    const postHeight = () => parent && parent.postMessage({type:'machines-grid-height', height:document.documentElement.scrollHeight}, '*');
+    window.addEventListener('load', postHeight); window.addEventListener('resize', postHeight);
+  } catch(e){}
+})();
+</script>
+</body>
+</html>
