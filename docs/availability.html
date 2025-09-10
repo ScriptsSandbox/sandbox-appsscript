@@ -26,12 +26,14 @@
 
       --t: 400ms;                    /* transition duration */
       --e: ease;                     /* transition easing */
+      --hour: 48px;                  /* hour row height */
+      --minor-line: rgba(0,0,0,.06); /* half-hour line */
     }
 
     html,body{
       margin:0; padding:0;
       background:var(--page); color:var(--text);
-      font:12px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; /* smaller */
+      font:12px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
     .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
 
@@ -101,18 +103,41 @@
     }
     .grid th, .grid td{border-right:1px solid var(--edge)}
     .grid th:last-child, .grid td:last-child{border-right:0}
-    .time{white-space:nowrap; width:100px; font-weight:600; color:#263042}
-    .grid tbody td{height:48px; padding:6px 8px}
+    .grid tbody td{
+      height:var(--hour);
+      padding:0 8px;                 /* top-aligned content */
+      vertical-align:top;
+    }
+
+    .time{
+      width:100px; color:#263042; font-weight:600;
+      position:relative; padding-left:8px; /* space from edge */
+    }
+    .time .tick{
+      display:block; line-height:1;
+      position:relative; top:-6px;  /* sit on the row's top line */
+    }
 
     /* cells */
     .cell{
-      border-top:1px solid var(--edge); border-bottom:1px solid var(--edge); border-right:1px solid var(--edge); border-left:0;
+      position:relative;
+      border-top:1px solid var(--edge);
+      border-bottom:1px solid var(--edge);
+      border-right:1px solid var(--edge);
+      border-left:0;
       transition: background-color var(--t) var(--e), outline-color var(--t) var(--e), opacity var(--t) var(--e), filter var(--t) var(--e);
       will-change: background-color, outline-color, opacity, filter;
     }
+    /* Half-hour guide line */
+    .cell::before{
+      content:""; position:absolute; left:0; right:0; top:50%;
+      height:1px; background:var(--minor-line);
+      pointer-events:none;
+    }
+
     .cell.cover{background:var(--coverA)}
     .cell.hit{background:var(--hitA); outline:2px solid var(--accent); outline-offset:-2px}
-    .names{font-weight:400; letter-spacing:.1px} /* non-bold */
+    .names{font-weight:400; letter-spacing:.1px; padding-top:2px}
 
     /* When a filter is active, softly de-emphasize non-hit cells */
     .filtered .grid td.cell{ opacity:.78; filter: grayscale(10%); }
@@ -161,7 +186,8 @@
     btnNext: document.getElementById('btnNext')
   };
 
-  const HOURS = { start: 9, end: 17 }; // 9–5 hourly slots
+  const HOURS = { start: 9, end: 17 };               // 9–5 hourly slots
+  const WEEKDAY_LABELS = ['Mon','Tue','Wed','Thu','Fri']; // Mon–Fri only
   let weekOffsetDays = 0;
   let selectedSkill = '';
 
@@ -245,19 +271,21 @@
   function renderGrid(){
     const mon = addDays(mondayOfWeek(nowTz), weekOffsetDays);
 
-    els.gridHead.innerHTML = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((lbl,i)=>{
-      if (i===0) return `<th class="time"></th>`;
-      const d = addDays(mon, i-1);
+    // Header: Mon–Fri only
+    els.gridHead.innerHTML = [''].concat(WEEKDAY_LABELS.map((lbl,i)=>{
+      const d = addDays(mon, i);
       const title = fmt(d,{weekday:'short'}) + ' ' + fmt(d,{month:'numeric'}) + '/' + fmt(d,{day:'numeric'});
       return `<th>${title}</th>`;
-    }).join('');
+    })).map((html,i)=> i===0 ? `<th class="time"></th>` : html).join('');
 
     const rows = [];
     for(let h=HOURS.start; h<=HOURS.end; h++){
       const cells = [];
-      cells.push(`<td class="time">${formatHour(h)}</td>`);
+      // Time label sits on the row's top line
+      cells.push(`<td class="time"><span class="tick">${formatHour(h)}</span></td>`);
 
-      for(let di=0; di<7; di++){
+      // Mon..Fri (offsets 0..4)
+      for(let di=0; di<5; di++){
         const d = addDays(mon, di);
         const dayKey = dayKeyTz(d);
         const slotStart = h*60, slotEnd = (h+1)*60;
