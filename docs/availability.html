@@ -19,11 +19,11 @@
       --edge:#e5e7eb;
 
       --accent:#00C6D7;
-      --hitA:rgba(0,198,215,.12);   /* very subtle fill on hit */
+      --hitA:rgba(0,198,215,.12);
 
-      --t:400ms;           /* transition duration */
-      --e:ease;            /* easing */
-      --hour:48px;         /* 1 hour row height */
+      --t:400ms;           /* transition */
+      --e:ease;
+      --hour:48px;         /* 1 hour height */
       --minor:#00000010;   /* half-hour line */
     }
 
@@ -97,15 +97,14 @@
       min-height:calc(var(--hour) * 8); /* 9–5 */
     }
 
-    /* Time column: hour labels sit inside the row (top line), with first/last nudged */
+    /* Time column: right-justified labels; no grid lines behind */
     .timecol{
       position:relative;border-right:1px solid var(--edge);
-      background:
-        repeating-linear-gradient(to bottom,
-          transparent 0, transparent calc(var(--hour) - 1px), var(--edge) calc(var(--hour) - 1px), var(--edge) var(--hour));
+      background:var(--card); /* remove hour lines behind text */
     }
     .tlab{
-      position:absolute; left:8px; line-height:1; font-weight:600; color:#263042;
+      position:absolute; right:8px; line-height:1; font-weight:600; color:#263042;
+      text-align:right;
       transform:translateY(-6px); transition:transform var(--t) var(--e);
     }
     .tlab.first{ transform:translateY(6px); }     /* push down from top border */
@@ -121,27 +120,26 @@
           transparent 0, transparent calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2));
     }
 
-    /* Event blocks (merged per-time-range) */
+    /* Event blocks (merged per-time-range); no rounded corners, no overlap */
     .event{
       position:absolute; left:6px; right:6px;
-      border-radius:0;                           /* square corners */
+      border-radius:0;
+      box-sizing:border-box;             /* use inset outline, no true border */
       padding:6px 8px;
-      background:rgba(2,132,199,.06);           /* very light */
-      border:1px solid #cfe9ef;
+      background:rgba(2,132,199,.06);
       color:#0b1220;
-      transition:background-color var(--t) var(--e),border-color var(--t) var(--e),box-shadow var(--t) var(--e),opacity var(--t) var(--e),filter var(--t) var(--e),top var(--t) var(--e),height var(--t) var(--e);
-      box-shadow:0 1px 4px rgba(0,0,0,.04);
+      box-shadow:inset 0 0 0 1px #cfe9ef;
+      transition:background-color var(--t) var(--e),box-shadow var(--t) var(--e),opacity var(--t) var(--e),filter var(--t) var(--e),top var(--t) var(--e),height var(--t) var(--e),z-index var(--t) var(--e);
       overflow:hidden;
     }
     /* On skill hit: outline & name highlight only */
     .event.hit{
       background:rgba(2,132,199,.06); /* keep base */
-      border-color:var(--accent);
-      box-shadow:0 0 0 2px var(--accent) inset;
+      box-shadow:inset 0 0 0 2px var(--accent);
     }
     .ename{font-weight:600;margin-bottom:2px}
     .ename .staff{color:inherit; transition:color var(--t) var(--e)}
-    .ename .staff.on{color:var(--accent)}  /* highlight only matching staff names */
+    .ename .staff.on{color:var(--accent)}
     .etime{color:var(--muted)}
 
     /* Dim non-matching events when filtered */
@@ -151,7 +149,6 @@
     @media (max-width: 760px){
       .cal-head{grid-template-columns:60px repeat(5,1fr)}
       .cal-body{grid-template-columns:60px repeat(5,1fr)}
-      .timecol{background-position-x:-4px}
     }
   </style>
 </head>
@@ -305,13 +302,12 @@
     return `<div class="timecol">${labels.join('')}</div>`;
   }
 
-  // Day column with merged blocks by person-set (pixel math to avoid rounding bleed)
+  // Day column with merged blocks by person-set, using pixel-safe layout (no overlap)
   function buildDayCol(d){
     const key = dayKey(d);
     const windowStart = HOURS.start * 60, windowEnd = HOURS.end * 60;
     const total = windowEnd - windowStart;
 
-    // calculate pixel scale from CSS var
     const hourPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hour')) || 48;
     const totalPx = hourPx * (HOURS.end - HOURS.start);
 
@@ -349,13 +345,22 @@
       }
     }
 
-    // 3) render full-width blocks (use px to avoid overlap; trim 1px to prevent bleed)
-    const blocks = slices.map(sl=>{
+    // 3) render full-width blocks; enforce no visual overlap (snap to integers with guard)
+    let prevBottom = 0; // px from top of day column
+    const blocks = slices.map((sl, idx)=>{
       const startRel = sl.start - windowStart;
       const endRel   = sl.end   - windowStart;
 
-      const topPx = (startRel / total) * totalPx;
-      const hPx   = Math.max(1, ((endRel - startRel) / total) * totalPx - 1); // trim 1px
+      // raw positions (subpixel allowed)
+      let topPxRaw = (startRel / total) * totalPx;
+      let bottomPxRaw = (endRel / total) * totalPx;
+
+      // snap to integers and enforce monotonic positioning
+      let topPx = Math.max(Math.round(topPxRaw), prevBottom);
+      let heightPx = Math.round(bottomPxRaw) - topPx;
+      // ensure visible & non-overlapping
+      if (heightPx < 1) { heightPx = 1; }
+      prevBottom = topPx + heightPx;
 
       const namesStr = sl.names.join(' + ');
       const timeLabel = fmtTime(startRel + windowStart) + '–' + fmtTime(endRel + windowStart);
@@ -365,12 +370,14 @@
         .map(n => `<span class="staff" data-name="${escAttr(n)}">${esc(n)}</span>`)
         .join(' + ');
 
-      // store comma list for quick access in JS
       const nameList = sl.names.join(',');
+
+      // z-index: later blocks above earlier
+      const z = 10 + idx;
 
       return `<div class="event"
                    data-names="${escAttr(nameList)}"
-                   style="top:${topPx}px; height:${hPx}px;"
+                   style="top:${topPx}px; height:${heightPx}px; z-index:${z};"
                    title="${esc(namesStr)} • ${esc(timeLabel)}">
                 <div class="ename">${namesHtml}</div>
                 <div class="etime">${esc(timeLabel)}</div>
@@ -385,7 +392,6 @@
     events.forEach(e=>{
       const names = (e.dataset.names || '').split(',').filter(Boolean);
       let any = false;
-      // toggle per-name highlight
       e.querySelectorAll('.staff').forEach(span=>{
         const nm = span.dataset.name || '';
         const skills = (SKILLS_BY_NAME[nm] || []);
@@ -393,7 +399,6 @@
         span.classList.toggle('on', on);
         any = any || on;
       });
-      // block outline only
       e.classList.toggle('hit', selectedSkill && any);
     });
   }
