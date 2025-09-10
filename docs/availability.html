@@ -6,14 +6,16 @@
   <title>Sandbox Staff — Weekly Schedule</title>
   <style>
     :root{
-      --bg:#6b7280;        /* page grey to match your site */
+      --bg:#6b7280;        /* page grey like your site */
       --card:#1f2937;      /* dark panel */
       --text:#e5e7eb;      /* light text */
       --muted:#cbd5e1;
       --edge:#374151;
       --pill:#111827;
       --pillText:#f8fafc;
-      --accent:#00C6D7;
+      --accent:#00C6D7;                /* selected skill color */
+      --coverA: rgba(255,255,255,.06); /* any coverage cell */
+      --hitA:   rgba(0,198,215,.28);   /* selected-skill match cell */
     }
     html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
       font:16px/1.45 system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
@@ -27,14 +29,18 @@
     .btn.active{outline:2px solid var(--accent)}
     .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
     .chip{background:#111827;color:#fff;border:1px solid var(--edge);padding:6px 10px;border-radius:999px;cursor:pointer;font-size:.85rem}
-    .chip.active{outline:2px solid var(--accent)}
+    .chip.active{background:var(--accent);color:#0b1220;border-color:transparent}
     .chip.reset{background:transparent;color:var(--text)}
     .grid{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden}
     .grid th,.grid td{border:1px solid var(--edge);padding:10px;vertical-align:top}
     .grid thead th{background:#2b3441;color:#fff;font-weight:600;text-align:left}
     .time{white-space:nowrap;width:110px}
-    .names{font-weight:700}
-    .skills{color:var(--muted);font-size:.9rem;margin-top:2px}
+    /* cells */
+    .cell{min-height:54px}
+    .cell.cover{background:var(--coverA)}
+    .cell.hit{background:var(--hitA); outline:2px solid var(--accent); outline-offset:-2px}
+    /* reduce touch delay on chips */
+    button{touch-action:manipulation}
     .hdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
     .hdr small{color:var(--muted)}
   </style>
@@ -43,7 +49,7 @@
 <div class="wrap">
   <div class="hdr">
     <h1>Sandbox Staff — Weekly Schedule</h1>
-    <small>Filter by skill, and switch between <b>This Week</b> and <b>Next Week</b>.</small>
+    <small>Filter by skill; matching cells highlight. “This Week” / “Next Week” toggle.</small>
   </div>
 
   <div class="toolbar">
@@ -78,14 +84,13 @@
   };
 
   // ---- state ----
-  const HOURS = { start: 9, end: 17 };            // 9am..5pm as hourly slots
-  let weekOffsetDays = 0;                         // 0 = this week, 7 = next week
-  let selectedSkill = '';                         // filter off by default
+  const HOURS = { start: 9, end: 17 };  // 9am..5pm as hourly slots
+  let weekOffsetDays = 0;               // 0 = this week, 7 = next week
+  let selectedSkill = '';               // filter off by default
 
   // ---- util: TZ formatting and math ----
   const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
-
   function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
   function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
@@ -101,31 +106,26 @@
     }
     return byName;
   }
-
   function splitIntoDaysAndPush(map, isoStart, isoEnd){
-    // Convert to tz day keys and minutes-of-day
     const s = new Date(isoStart), e = new Date(isoEnd);
     let cur = new Date(s);
     while (true){
       const dayKey = dayKeyTz(cur);
-      const dayStartMin = minutesOfDayTz(cur);
+      const startMin = minutesOfDayTz(cur);
       const nextDay = new Date(cur); nextDay.setDate(nextDay.getDate()+1); nextDay.setHours(0,0,0,0);
       const endForDay = (e <= nextDay) ? e : nextDay;
       const endMin = minutesOfDayTz(endForDay);
-      pushSeg(map, dayKey, dayStartMin, endMin);
+      pushSeg(map, dayKey, startMin, endMin);
       if (e <= nextDay) break;
       cur = nextDay;
     }
   }
-
   function pushSeg(map, key, a, b){
     if (!map[key]) map[key] = [];
-    // clip to sane limits
     const start = Math.max(0, Math.min(24*60, a));
     const end   = Math.max(0, Math.min(24*60, b));
     if (end>start) map[key].push([start,end]);
   }
-
   function dayKeyTz(d){
     const y = fmt(d,{year:'numeric'}), m = fmt(d,{month:'2-digit'}), da = fmt(d,{day:'2-digit'});
     return `${y}-${m}-${da}`;
@@ -183,23 +183,27 @@
         const dayKey = dayKeyTz(d);
         const slotStart = h*60, slotEnd = (h+1)*60;
 
-        // who matches this slot?
-        let persons = PEOPLE.filter(p=>{
-          if (selectedSkill && !(p.skills||[]).includes(selectedSkill)) return false;
+        // who has *any* coverage in this slot?
+        const peopleInSlot = PEOPLE.filter(p=>{
           const segs = (PERSON_DAY_SEGS[p.name]||{})[dayKey]||[];
           return segs.some(([a,b]) => (a<slotEnd && b>slotStart));
         });
 
-        // names + union-of-skills
-        persons.sort((a,b)=>a.name.localeCompare(b.name));
-        const names = persons.map(p=>p.name).join(' · ');
-        const skillsUnion = Array.from(new Set(persons.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
-        const skillsLine = skillsUnion.join(', ');
+        // and who matches the selected skill?
+        const hits = selectedSkill
+          ? peopleInSlot.filter(p => (p.skills||[]).includes(selectedSkill))
+          : [];
 
-        const cell = persons.length
-          ? `<div class="names">${esc(names)}</div><div class="skills">${esc(skillsLine)}</div>`
-          : '';
-        rowCells.push(`<td>${cell}</td>`);
+        const hasCover = peopleInSlot.length > 0;
+        const hasHit = hits.length > 0;
+
+        // Build a title for hover (keeps info accessible without text in the cell)
+        const title = (hasCover
+          ? `${peopleInSlot.map(p=>p.name).join(', ')}`
+          : '');
+
+        const cls = ['cell', hasCover?'cover':'', hasHit?'hit':''].join(' ').trim();
+        rowCells.push(`<td class="${cls}" title="${esc(title)}"></td>`);
       }
       rowsHtml.push(`<tr>${rowCells.join('')}</tr>`);
     }
