@@ -18,7 +18,8 @@
       --muted:#5b6573;
       --edge:#e5e7eb;
 
-      --accent:#00C6D7;
+      --accent:#00C6D7;    /* cyan */
+      --barBase:#bfe7ee;   /* pale cyan for the leading bar when not hit */
       --hitA:rgba(0,198,215,.22);
 
       --t:400ms;           /* transition */
@@ -63,6 +64,7 @@
       transition:background-color var(--t) var(--e),color var(--t) var(--e),box-shadow var(--t) var(--e);
     }
     .seg button.active{background:var(--accent);color:#042226;box-shadow:0 0 0 2px var(--accent) inset}
+
     .chips{display:flex;flex-wrap:wrap;gap:6px}
     .chip{
       appearance:none;border:1px solid var(--edge);background:#fff;color:#0b1220;
@@ -129,11 +131,20 @@
       box-shadow:0 2px 8px rgba(0,0,0,.06);
       overflow:hidden;
     }
+    /* Slim leading bar */
+    .event::before{
+      content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+      background:var(--barBase);
+      border-top-left-radius:10px; border-bottom-left-radius:10px;
+      transition:background-color var(--t) var(--e), opacity var(--t) var(--e), filter var(--t) var(--e);
+    }
     .event.hit{
       background:var(--hitA);
       border-color:var(--accent);
       box-shadow:0 0 0 2px var(--accent) inset, 0 6px 16px rgba(0,0,0,.08);
     }
+    .event.hit::before{ background:var(--accent); }
+
     .ename{font-weight:600;margin-bottom:2px}
     .etime{color:var(--muted)}
 
@@ -200,6 +211,8 @@
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
   function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
   function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function minutes(d){ return d.getHours()*60 + d.getMinutes(); }
+  function dayKey(d){ return fmt(d,{year:'numeric'}) + '-' + fmt(d,{month:'2-digit'}) + '-' + fmt(d,{day:'2-digit'}); }
 
   // Build person -> dayKey -> segments [startMin,endMin]
   function buildDaySegments(){
@@ -224,8 +237,6 @@
     }
     return byName;
   }
-  function minutes(d){ return d.getHours()*60 + d.getMinutes(); }
-  function dayKey(d){ return fmt(d,{year:'numeric'}) + '-' + fmt(d,{month:'2-digit'}) + '-' + fmt(d,{day:'2-digit'}); }
 
   const PERSON_DAY = buildDaySegments();
   const SKILLS_BY_NAME = PEOPLE.reduce((acc,p)=>{ acc[p.name]=p.skills||[]; return acc; },{});
@@ -288,7 +299,6 @@
   }
 
   function buildTimeCol(){
-    // hour labels aligned to top line of each hour row
     const labels = [];
     for(let h=HOURS.start; h<=HOURS.end; h++){
       const top = (h - HOURS.start) * 100 / (HOURS.end - HOURS.start);
@@ -297,13 +307,13 @@
     return `<div class="timecol">${labels.join('')}</div>`;
   }
 
-  // BUILD A DAY COLUMN WITH MERGED BLOCKS BY PERSON-SET
+  // Day column with merged blocks by person-set
   function buildDayCol(d){
     const key = dayKey(d);
     const windowStart = HOURS.start * 60, windowEnd = HOURS.end * 60;
     const total = windowEnd - windowStart;
 
-    // 1) collect boundaries (clamped) from all people
+    // 1) boundaries from all people (clamped)
     const bounds = new Set();
     for(const name in PERSON_DAY){
       const segs = (PERSON_DAY[name]||{})[key] || [];
@@ -316,7 +326,7 @@
     if (bounds.size === 0) return `<div class="daycol"></div>`;
     const pts = Array.from(bounds).sort((a,b)=>a-b);
 
-    // 2) build piecewise-constant coverage over [pt[i],pt[i+1])
+    // 2) piecewise-constant coverage over [pt[i],pt[i+1))
     const slices = [];
     for(let i=0; i<pts.length-1; i++){
       const a = pts[i], b = pts[i+1];
@@ -327,9 +337,8 @@
         if (segs.some(([s,e]) => s < b && e > a)) names.push(name);
       }
       if (names.length){
-        // merge with previous if same set
-        const last = slices[slices.length-1];
         const setKey = names.slice().sort().join('|');
+        const last = slices[slices.length-1];
         if (last && last.key === setKey && Math.abs(last.end - a) < 0.001){
           last.end = b;
         } else {
@@ -338,14 +347,13 @@
       }
     }
 
-    // 3) render blocks full-width (no side-by-side)
+    // 3) render full-width blocks
     const blocks = slices.map(sl=>{
       const startRel = sl.start - windowStart;
       const endRel   = sl.end   - windowStart;
       const topPct = (startRel / total) * 100;
       const hPct   = ((endRel - startRel) / total) * 100;
 
-      // union skills across names
       const skillSet = Array.from(new Set(sl.names.flatMap(n => SKILLS_BY_NAME[n] || [])));
       const skillStr = skillSet.join('|');
       const namesStr = sl.names.join(' + ');
