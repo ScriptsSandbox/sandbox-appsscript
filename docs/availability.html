@@ -19,15 +19,12 @@
       --edge:#e5e7eb;
 
       --accent:#00C6D7;
-      --orange:#FC8900;
+      --hitA:rgba(0,198,215,.22);
 
-      --coverA: rgba(0,0,0,.04);     /* any coverage */
-      --hitA:   rgba(0,198,215,.22); /* selected-skill match */
-
-      --t: 400ms;                    /* transition duration */
-      --e: ease;                     /* transition easing */
-      --hour: 48px;                  /* hour row height */
-      --minor-line: rgba(0,0,0,.06); /* half-hour line */
+      --t:400ms;           /* transition */
+      --e:ease;
+      --hour:48px;         /* 1 hour height */
+      --minor:#00000010;   /* half-hour line */
     }
 
     html,body{
@@ -37,112 +34,120 @@
     }
     .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
 
-    /* Header card */
+    /* Header */
     .header-card{
       background:var(--card);
       border:1px solid var(--edge);
       border-radius:20px;
       box-shadow:0 8px 20px rgba(0,0,0,.06);
       padding:12px 14px;
-      display:flex; align-items:center; gap:12px;
       margin-bottom:12px;
     }
-    .header-text h1{font-size:1rem; margin:0 0 2px 0; font-weight:700}
-    .sub{color:var(--muted); font-size:.9rem}
+    .header-text h1{font-size:1rem;margin:0 0 2px 0;font-weight:700}
+    .sub{color:var(--muted);font-size:.9rem}
 
-    /* Controls row */
+    /* Controls */
     .controls{
       background:var(--card);
       border:1px solid var(--edge);
       border-radius:16px;
       box-shadow:0 8px 20px rgba(0,0,0,.04);
       padding:8px 10px;
-      display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;
       margin-bottom:10px;
     }
-    .seg{
-      display:inline-flex; gap:6px; background:#fff; border:1px solid var(--edge);
-      border-radius:999px; padding:3px;
-    }
+    .seg{display:inline-flex;gap:6px;background:#fff;border:1px solid var(--edge);border-radius:999px;padding:3px}
     .seg button{
-      appearance:none; border:0; background:transparent; color:var(--text);
-      padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600;
-      transition: background-color var(--t) var(--e), color var(--t) var(--e), box-shadow var(--t) var(--e);
+      appearance:none;border:0;background:transparent;color:var(--text);
+      padding:6px 10px;border-radius:999px;cursor:pointer;font-weight:600;
+      transition:background-color var(--t) var(--e),color var(--t) var(--e),box-shadow var(--t) var(--e);
     }
-    .seg button.active{
-      background:var(--accent); color:#042226;
-      box-shadow:0 0 0 2px var(--accent) inset;
-    }
-
-    .chips{display:flex; flex-wrap:wrap; gap:6px}
+    .seg button.active{background:var(--accent);color:#042226;box-shadow:0 0 0 2px var(--accent) inset}
+    .chips{display:flex;flex-wrap:wrap;gap:6px}
     .chip{
-      appearance:none; border:1px solid var(--edge); background:#fff; color:#0b1220;
-      padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:400; /* non-bold */
+      appearance:none;border:1px solid var(--edge);background:#fff;color:#0b1220;
+      padding:6px 10px;border-radius:999px;cursor:pointer;font-weight:400;
       box-shadow:0 1px 0 rgba(0,0,0,.02);
-      transition: background-color var(--t) var(--e), color var(--t) var(--e), box-shadow var(--t) var(--e);
+      transition:background-color var(--t) var(--e),color var(--t) var(--e),box-shadow var(--t) var(--e);
     }
-    .chip.reset{color:var(--muted); background:#fff}
-    .chip.active{
-      background:var(--accent); color:#06262A; border-color:transparent;
-      box-shadow:0 0 0 2px var(--accent) inset;
-    }
+    .chip.reset{color:var(--muted)}
+    .chip.active{background:var(--accent);color:#06262A;border-color:transparent;box-shadow:0 0 0 2px var(--accent) inset}
 
-    /* Grid table */
-    .grid{
-      width:100%; border-collapse:separate; border-spacing:0;
+    /* Calendar shell */
+    .cal{
       background:var(--card);
       border:1px solid var(--edge);
-      border-radius:20px; overflow:hidden;
+      border-radius:20px;
       box-shadow:0 10px 24px rgba(0,0,0,.06);
-      transition: filter var(--t) var(--e), opacity var(--t) var(--e);
+      overflow:hidden;
     }
-    .grid thead th{
-      background:#f3f4f6; color:#0f172a; font-weight:700; text-align:left;
-      padding:10px; border-bottom:1px solid var(--edge);
-      transition: color var(--t) var(--e), background-color var(--t) var(--e), opacity var(--t) var(--e), filter var(--t) var(--e);
-    }
-    .grid th, .grid td{border-right:1px solid var(--edge)}
-    .grid th:last-child, .grid td:last-child{border-right:0}
-    .grid tbody td{
-      height:var(--hour);
-      padding:0 8px;                 /* top-aligned content */
-      vertical-align:top;
-    }
-
-    .time{
-      width:100px; color:#263042; font-weight:600;
-      position:relative; padding-left:8px; /* space from edge */
-    }
-    .time .tick{
-      display:block; line-height:1;
-      position:relative; top:-6px;  /* sit on the row's top line */
-    }
-
-    /* cells */
-    .cell{
-      position:relative;
-      border-top:1px solid var(--edge);
+    .cal-head{
+      display:grid;
+      grid-template-columns:100px repeat(5,1fr); /* time + Mon-Fri */
+      align-items:stretch;
       border-bottom:1px solid var(--edge);
-      border-right:1px solid var(--edge);
-      border-left:0;
-      transition: background-color var(--t) var(--e), outline-color var(--t) var(--e), opacity var(--t) var(--e), filter var(--t) var(--e);
-      will-change: background-color, outline-color, opacity, filter;
+      background:#f3f4f6;
     }
-    /* Half-hour guide line */
-    .cell::before{
-      content:""; position:absolute; left:0; right:0; top:50%;
-      height:1px; background:var(--minor-line);
-      pointer-events:none;
+    .cal-head .timecol{border-right:1px solid var(--edge)}
+    .cal-head .day{padding:10px;border-right:1px solid var(--edge);font-weight:700;color:#0f172a}
+    .cal-body{
+      display:grid;
+      grid-template-columns:100px repeat(5,1fr);
+      min-height:calc(var(--hour) * 8); /* 9–5 */
     }
 
-    .cell.cover{background:var(--coverA)}
-    .cell.hit{background:var(--hitA); outline:2px solid var(--accent); outline-offset:-2px}
-    .names{font-weight:400; letter-spacing:.1px; padding-top:2px}
+    /* Time column: labels aligned to hour lines (top of each row) */
+    .timecol{
+      position:relative;border-right:1px solid var(--edge);
+      background:
+        repeating-linear-gradient(to bottom,
+          transparent 0, transparent calc(var(--hour) - 1px), var(--edge) calc(var(--hour) - 1px), var(--edge) var(--hour));
+    }
+    .tlab{
+      position:absolute; left:8px; transform:translateY(-6px);
+      font-weight:600; color:#263042; line-height:1;
+    }
 
-    /* When a filter is active, softly de-emphasize non-hit cells */
-    .filtered .grid td.cell{ opacity:.78; filter: grayscale(10%); }
-    .filtered .grid td.cell.hit{ opacity:1; filter:none; }
-    .filtered .grid thead th{ opacity:.9; }
+    /* Day columns */
+    .daycol{
+      position:relative; border-right:1px solid var(--edge);
+      /* Hour & half-hour grid lines */
+      background:
+        repeating-linear-gradient(to bottom,
+          transparent 0, transparent calc(var(--hour) - 1px), var(--edge) calc(var(--hour) - 1px), var(--edge) var(--hour)),
+        repeating-linear-gradient(to bottom,
+          transparent 0, transparent calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2));
+    }
+
+    /* Event blocks */
+    .event{
+      position:absolute; left:6px; right:6px;
+      border-radius:8px; padding:6px 8px;
+      background:rgba(2, 132, 199, .10); /* subtle base */
+      border:1px solid #cfe9ef;
+      color:#0b1220;
+      transition:background-color var(--t) var(--e),border-color var(--t) var(--e),box-shadow var(--t) var(--e),opacity var(--t) var(--e),filter var(--t) var(--e);
+      box-shadow:0 2px 8px rgba(0,0,0,.06);
+      overflow:hidden;
+    }
+    .event.hit{
+      background:var(--hitA);
+      border-color:var(--accent);
+      box-shadow:0 0 0 2px var(--accent) inset, 0 6px 16px rgba(0,0,0,.08);
+    }
+    .ename{font-weight:400;margin-bottom:2px}
+    .etime{color:var(--muted)}
+
+    /* Dim non-matching events when filtered */
+    .filtered .event{opacity:.78; filter:grayscale(10%)}
+    .filtered .event.hit{opacity:1; filter:none}
+
+    /* Small view fix */
+    @media (max-width: 760px){
+      .cal-head{grid-template-columns:60px repeat(5,1fr)}
+      .cal-body{grid-template-columns:60px repeat(5,1fr)}
+      .timecol{background-position-x: -4px}
+    }
   </style>
 </head>
 <body>
@@ -150,7 +155,7 @@
     <div class="header-card">
       <div class="header-text">
         <h1>Sandbox Staff — Weekly Schedule</h1>
-        <div class="sub">Filter by skill; matching cells highlight. Use “This Week / Next Week”.</div>
+        <div class="sub">Filter by skill; matching events highlight. This Week / Next Week toggle.</div>
       </div>
     </div>
 
@@ -162,10 +167,10 @@
       <div class="chips" id="skillChips"></div>
     </div>
 
-    <table class="grid" id="grid" aria-label="Weekly staff availability">
-      <thead><tr id="headRow"></tr></thead>
-      <tbody id="bodyRows"></tbody>
-    </table>
+    <div class="cal">
+      <div class="cal-head" id="calHead"></div>
+      <div class="cal-body" id="calBody"></div>
+    </div>
   </div>
 
 <script>
@@ -179,64 +184,60 @@
 
   const els = {
     wrap: document.getElementById('wrap'),
-    gridHead: document.getElementById('headRow'),
-    gridBody: document.getElementById('bodyRows'),
+    head: document.getElementById('calHead'),
+    body: document.getElementById('calBody'),
     chips: document.getElementById('skillChips'),
     btnThis: document.getElementById('btnThis'),
     btnNext: document.getElementById('btnNext')
   };
 
-  const HOURS = { start: 9, end: 17 };               // 9–5 hourly slots
-  const WEEKDAY_LABELS = ['Mon','Tue','Wed','Thu','Fri']; // Mon–Fri only
+  // Config
+  const HOURS = { start: 9, end: 17 };                 // 9–5
+  const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri'];  // Mon–Fri
   let weekOffsetDays = 0;
   let selectedSkill = '';
 
+  // TZ helpers
   const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
   function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
   function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function minutes(d){ return d.getHours()*60 + d.getMinutes(); }
 
+  // Build per-person day segments (minute ranges)
   function buildDaySegments(){
     const byName = {};
     for(const p of PEOPLE){
-      const segMap = {};
-      for(const a of (p.available||[])) splitIntoDaysAndPush(segMap, a.start, a.end);
-      byName[p.name] = segMap;
+      const m = {};
+      for(const a of (p.available||[])){
+        // Split by day
+        let s=new Date(a.start), e=new Date(a.end);
+        let cur = new Date(s);
+        while(true){
+          const key = dayKey(cur);
+          const dayStart = new Date(cur); dayStart.setHours(0,0,0,0);
+          const nextDay  = new Date(dayStart); nextDay.setDate(nextDay.getDate()+1);
+          const endForDay = (e <= nextDay) ? e : nextDay;
+          if (!m[key]) m[key] = [];
+          m[key].push([minutes(s), minutes(endForDay)]);
+          if (e <= nextDay) break;
+          cur = nextDay;
+        }
+      }
+      byName[p.name] = m;
     }
     return byName;
   }
-  function splitIntoDaysAndPush(map, isoStart, isoEnd){
-    const s = new Date(isoStart), e = new Date(isoEnd);
-    let cur = new Date(s);
-    while (true){
-      const key = dayKeyTz(cur);
-      const startMin = minutesOfDayTz(cur);
-      const nextDay = new Date(cur); nextDay.setDate(nextDay.getDate()+1); nextDay.setHours(0,0,0,0);
-      const endForDay = (e <= nextDay) ? e : nextDay;
-      const endMin = minutesOfDayTz(endForDay);
-      pushSeg(map, key, startMin, endMin);
-      if (e <= nextDay) break;
-      cur = nextDay;
-    }
-  }
-  function pushSeg(map, key, a, b){
-    if (!map[key]) map[key] = [];
-    const start = Math.max(0, Math.min(24*60, a));
-    const end   = Math.max(0, Math.min(24*60, b));
-    if (end>start) map[key].push([start,end]);
-  }
-  function dayKeyTz(d){
-    const y = fmt(d,{year:'numeric'}), m = fmt(d,{month:'2-digit'}), da = fmt(d,{day:'2-digit'});
-    return `${y}-${m}-${da}`;
-  }
-  function minutesOfDayTz(d){
-    const hh = parseInt(fmt(d,{hour:'2-digit',hour12:false}),10);
-    const mm = parseInt(fmt(d,{minute:'2-digit'}),10);
-    return hh*60+mm;
-  }
 
-  const PERSON_DAY_SEGS = buildDaySegments();
+  function dayKey(d){ return fmt(d,{year:'numeric'}) + '-' + fmt(d,{month:'2-digit'}) + '-' + fmt(d,{day:'2-digit'}); }
 
+  const PERSON_DAY = buildDaySegments();
+
+  // Controls
+  els.btnThis.addEventListener('click', ()=>{ weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); render(); });
+  els.btnNext.addEventListener('click', ()=>{ weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); render(); });
+
+  // Chips
   function renderChips(){
     const chips = ['Reset filter', ...ALL_SKILLS];
     els.chips.innerHTML = chips.map((s,i)=>{
@@ -245,104 +246,144 @@
       const cls = ['chip', isReset?'reset':'', active?'active':''].join(' ').trim();
       return `<button class="${cls}" data-skill="${isReset?'':s}" aria-pressed="${active}">${s}</button>`;
     }).join('');
-    els.chips.querySelectorAll('.chip').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        selectedSkill = btn.dataset.skill || '';
-        els.wrap.classList.toggle('filtered', !!selectedSkill); // dim non-hit cells
-        applyFilterStyles();  // toggle classes in-place for smooth transitions
-        // refresh chip states
-        els.chips.querySelectorAll('.chip').forEach(b=>{
-          const isReset = b.dataset.skill==="";
-          const active  = isReset ? !selectedSkill : (selectedSkill===b.dataset.skill);
-          b.classList.toggle('active', active);
-          b.setAttribute('aria-pressed', String(active));
+    els.chips.querySelectorAll('.chip').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        selectedSkill = b.dataset.skill || '';
+        els.wrap.classList.toggle('filtered', !!selectedSkill);
+        updateEventHits();      // animate in place
+        // update chip visuals
+        els.chips.querySelectorAll('.chip').forEach(x=>{
+          const isReset = x.dataset.skill==="";
+          const active = isReset ? !selectedSkill : (selectedSkill===x.dataset.skill);
+          x.classList.toggle('active', active);
+          x.setAttribute('aria-pressed', String(active));
         });
       });
     });
   }
 
-  els.btnThis.addEventListener('click', ()=>{
-    weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); renderGrid();
-  });
-  els.btnNext.addEventListener('click', ()=>{
-    weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); renderGrid();
-  });
-
-  function renderGrid(){
+  function render(){
     const mon = addDays(mondayOfWeek(nowTz), weekOffsetDays);
 
-    // Header: Mon–Fri only
-    els.gridHead.innerHTML = [''].concat(WEEKDAY_LABELS.map((lbl,i)=>{
-      const d = addDays(mon, i);
-      const title = fmt(d,{weekday:'short'}) + ' ' + fmt(d,{month:'numeric'}) + '/' + fmt(d,{day:'numeric'});
-      return `<th>${title}</th>`;
-    })).map((html,i)=> i===0 ? `<th class="time"></th>` : html).join('');
+    // Head
+    els.head.innerHTML = [
+      `<div class="timecol"></div>`,
+      ...DAY_LABELS.map((_,i)=>{
+        const d = addDays(mon, i);
+        const title = fmt(d,{weekday:'short'}) + ' ' + fmt(d,{month:'numeric'}) + '/' + fmt(d,{day:'numeric'});
+        return `<div class="day">${title}</div>`;
+      })
+    ].join('');
 
-    const rows = [];
+    // Body grid: time col + 5 day columns
+    const totalMins = (HOURS.end - HOURS.start) * 60;
+    const hourRows = [];
     for(let h=HOURS.start; h<=HOURS.end; h++){
-      const cells = [];
-      // Time label sits on the row's top line
-      cells.push(`<td class="time"><span class="tick">${formatHour(h)}</span></td>`);
-
-      // Mon..Fri (offsets 0..4)
-      for(let di=0; di<5; di++){
-        const d = addDays(mon, di);
-        const dayKey = dayKeyTz(d);
-        const slotStart = h*60, slotEnd = (h+1)*60;
-
-        const peopleInSlot = PEOPLE.filter(p=>{
-          const segs = (PERSON_DAY_SEGS[p.name]||{})[dayKey]||[];
-          return segs.some(([a,b]) => (a<slotEnd && b>slotStart));
-        });
-
-        const skillSet = Array.from(new Set(peopleInSlot.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
-        const hasCover = peopleInSlot.length>0;
-        const names = peopleInSlot.map(p=>p.name).join(' • ');
-
-        const classes = ['cell', hasCover?'cover':''];
-        const td = `<td class="${classes.join(' ').trim()}" 
-                        title="${esc(names)}"
-                        data-cover="${hasCover?1:0}"
-                        data-skills="${escAttr(skillSet.join('|'))}">
-                      ${hasCover ? `<div class="names">${esc(names)}</div>` : ''}
-                    </td>`;
-        cells.push(td);
-      }
-      rows.push(`<tr>${cells.join('')}</tr>`);
+      const top = (h - HOURS.start) * varPx('--hour');
+      hourRows.push(`<div class="tlab" style="top:${(h-HOURS.start)*100/(HOURS.end-HOURS.start)}%">${formatHour(h)}</div>`);
     }
-    els.gridBody.innerHTML = rows.join('');
+    const timeCol = `<div class="timecol">${hourRows.join('')}</div>`;
 
+    // Build event DOM per day
+    const dayCols = DAY_LABELS.map((_,i)=>{
+      const d = addDays(mon, i);
+      const key = dayKey(d);
+
+      // Collect events: one block per person availability chunk within day, clamped to working window
+      const evts = [];
+      for(const p of PEOPLE){
+        const segs = (PERSON_DAY[p.name]||{})[key] || [];
+        for(const [s,e] of segs){
+          const sRel = Math.max(0, s - HOURS.start*60);
+          const eRel = Math.min(totalMins, e - HOURS.start*60);
+          if (eRel <= 0 || sRel >= totalMins || eRel - sRel < 10) continue;
+          evts.push({
+            name: p.name,
+            skills: p.skills||[],
+            start: sRel, end: eRel
+          });
+        }
+      }
+
+      // Simple overlap layout (greedy columns)
+      evts.sort((a,b)=> a.start - b.start || (a.end - b.end));
+      const cols = []; // array of end times for active columns
+      evts.forEach(ev=>{
+        let col = 0;
+        for(; col<cols.length; col++){ if (ev.start >= cols[col]) break; }
+        cols[col] = ev.end;
+        ev.col = col;
+        ev.colCount = Math.max((ev.colCount||0), cols.length);
+      });
+      const colCount = cols.length || 1;
+
+      // Render
+      const blocks = evts.map(ev=>{
+        const topPct = (ev.start / totalMins) * 100;
+        const hPct   = ((ev.end - ev.start) / totalMins) * 100;
+        const widthPct = (100 / colCount);
+        const leftPct  = widthPct * ev.col;
+        // hit state is toggled later by updateEventHits()
+        const timeLabel = fmtTime(ev.start + HOURS.start*60) + '–' + fmtTime(ev.end + HOURS.start*60);
+        const skillStr = (ev.skills||[]).join('|');
+        return `<div class="event"
+                     data-skills="${escAttr(skillStr)}"
+                     style="top:${topPct}%; height:${hPct}%; left:${leftPct}%; width:${widthPct}%;"
+                     title="${esc(ev.name)} • ${esc(timeLabel)}">
+                  <div class="ename">${esc(ev.name)}</div>
+                  <div class="etime">${esc(timeLabel)}</div>
+                </div>`;
+      }).join('');
+
+      return `<div class="daycol">${blocks}</div>`;
+    });
+
+    els.body.innerHTML = [timeCol, ...dayCols].join('');
+
+    // Apply current filter state
     els.wrap.classList.toggle('filtered', !!selectedSkill);
-    applyFilterStyles();
+    updateEventHits();
 
+    // Try to resize iframe
     try{
       const h = document.documentElement.scrollHeight;
       parent && parent.postMessage({type:'machines-grid-height', height:h}, '*');
     }catch(e){}
   }
 
-  // Toggle .hit based on current selectedSkill using cell data attributes (so transitions animate)
-  function applyFilterStyles(){
-    const cells = els.gridBody.querySelectorAll('td.cell');
-    cells.forEach(td=>{
-      const hasCover = td.dataset.cover === '1';
-      const skills = (td.dataset.skills || '').split('|').filter(Boolean);
-      const hasHit = selectedSkill ? skills.includes(selectedSkill) : false;
-      td.classList.toggle('hit', hasHit);
-      td.classList.toggle('cover', hasCover);
+  // Toggle .hit class on events (no re-render -> transitions visible)
+  function updateEventHits(){
+    const events = els.body.querySelectorAll('.event');
+    events.forEach(e=>{
+      const skills = (e.dataset.skills || '').split('|').filter(Boolean);
+      const hit = selectedSkill ? skills.includes(selectedSkill) : false;
+      e.classList.toggle('hit', hit);
     });
+  }
+
+  function varPx(name){
+    // returns numeric px value from a CSS custom property (used for hour height if needed)
+    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
   }
 
   function formatHour(h24){
     const ampm = h24>=12 ? 'PM' : 'AM';
     const h = ((h24+11)%12)+1;
-    return `${h}:00 ${ampm}`;
+    return `${h} ${ampm}`;
   }
-  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmtTime(totalMins){
+    let m = totalMins % 60;
+    let h24 = Math.floor(totalMins / 60) % 24;
+    const ampm = h24>=12 ? 'PM' : 'AM';
+    const h = ((h24+11)%12)+1;
+    return `${h}${m?':'+String(m).padStart(2,'0'):''} ${ampm}`;
+  }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'}[c])); }
   function escAttr(s){ return (s==null?'':String(s)).replace(/"/g,'&quot;'); }
 
+  // Init
   renderChips();
-  renderGrid();
+  render();
 })();
 </script>
 </body>
