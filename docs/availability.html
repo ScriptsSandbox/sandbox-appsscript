@@ -6,14 +6,14 @@
   <title>Sandbox Staff — Weekly Schedule</title>
   <style>
     :root{
-      --bg:#6b7280;        /* page grey like your site */
+      --bg:#6b7280;        /* page grey */
       --card:#1f2937;      /* dark panel */
       --text:#e5e7eb;      /* light text */
       --muted:#cbd5e1;
       --edge:#374151;
       --pill:#111827;
       --pillText:#f8fafc;
-      --accent:#00C6D7;                /* selected skill color */
+      --accent:#00C6D7;                /* selected-skill color */
       --coverA: rgba(255,255,255,.06); /* any coverage cell */
       --hitA:   rgba(0,198,215,.28);   /* selected-skill match cell */
     }
@@ -21,7 +21,6 @@
       font:16px/1.45 system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
     .wrap{max-width:1100px;margin:0 auto;padding:16px}
     h1{font-size:1.5rem;margin:0 0 4px 0}
-    .muted{color:var(--muted)}
     .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
     .btn{background:var(--pill);color:var(--pillText);border:1px solid var(--edge);
       padding:8px 12px;border-radius:999px;cursor:pointer}
@@ -29,18 +28,17 @@
     .btn.active{outline:2px solid var(--accent)}
     .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
     .chip{background:#111827;color:#fff;border:1px solid var(--edge);padding:6px 10px;border-radius:999px;cursor:pointer;font-size:.85rem}
-    .chip.active{background:var(--accent);color:#0b1220;border-color:transparent}
+    .chip.active{background:var(--accent);color:#0b1220;border-color:transparent;box-shadow:0 0 0 2px var(--accent) inset, 0 0 0 1px var(--accent)}
     .chip.reset{background:transparent;color:var(--text)}
     .grid{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden}
     .grid th,.grid td{border:1px solid var(--edge);padding:10px;vertical-align:top}
     .grid thead th{background:#2b3441;color:#fff;font-weight:600;text-align:left}
     .time{white-space:nowrap;width:110px}
     /* cells */
-    .cell{min-height:54px}
+    .cell{min-height:54px;padding:6px 8px}
     .cell.cover{background:var(--coverA)}
     .cell.hit{background:var(--hitA); outline:2px solid var(--accent); outline-offset:-2px}
-    /* reduce touch delay on chips */
-    button{touch-action:manipulation}
+    .names{font-weight:600;font-size:.9rem;letter-spacing:.1px}
     .hdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
     .hdr small{color:var(--muted)}
   </style>
@@ -66,7 +64,6 @@
 
 <script>
 (async function(){
-  // ---- load data ----
   const data = await fetch('./data/availability.json', {cache:'no-cache'}).then(r=>r.json());
   const tz = data.tz || 'America/Los_Angeles';
   const PEOPLE = data.people || [];
@@ -74,7 +71,6 @@
     ? data.skills
     : Array.from(new Set(PEOPLE.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
 
-  // ---- DOM ----
   const els = {
     gridHead: document.getElementById('headRow'),
     gridBody: document.getElementById('bodyRows'),
@@ -83,18 +79,15 @@
     btnNext: document.getElementById('btnNext')
   };
 
-  // ---- state ----
-  const HOURS = { start: 9, end: 17 };  // 9am..5pm as hourly slots
-  let weekOffsetDays = 0;               // 0 = this week, 7 = next week
-  let selectedSkill = '';               // filter off by default
+  const HOURS = { start: 9, end: 17 };
+  let weekOffsetDays = 0;
+  let selectedSkill = '';
 
-  // ---- util: TZ formatting and math ----
   const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
   function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
   function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
-  // Build per-person, per-day segments in minutes after midnight (in tz)
   function buildDaySegments(){
     const byName = {};
     for(const p of PEOPLE){
@@ -102,7 +95,7 @@
       for(const a of (p.available||[])){
         splitIntoDaysAndPush(segMap, a.start, a.end);
       }
-      byName[p.name] = segMap;   // { 'YYYY-MM-DD': [ [startMin,endMin], ... ] }
+      byName[p.name] = segMap;
     }
     return byName;
   }
@@ -138,14 +131,14 @@
 
   const PERSON_DAY_SEGS = buildDaySegments();
 
-  // ---- chips ----
   function renderChips(){
     const chips = ['Reset filter', ...ALL_SKILLS];
     els.chips.innerHTML = chips.map((s,i)=>{
       const isReset = i===0;
       const active = isReset ? !selectedSkill : (selectedSkill===s);
       const cls = ['chip', isReset?'reset':'', active?'active':''].join(' ').trim();
-      return `<button class="${cls}" data-skill="${isReset?'':s}">${s}</button>`;
+      const pressed = active ? 'true' : 'false';
+      return `<button class="${cls}" data-skill="${isReset?'':s}" aria-pressed="${pressed}">${s}</button>`;
     }).join('');
     els.chips.querySelectorAll('.chip').forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -155,14 +148,11 @@
     });
   }
 
-  // ---- week switch ----
   els.btnThis.addEventListener('click', ()=>{ weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); renderGrid(); });
   els.btnNext.addEventListener('click', ()=>{ weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); renderGrid(); });
 
-  // ---- grid ----
   function renderGrid(){
     const mon = addDays(mondayOfWeek(nowTz), weekOffsetDays);
-    // header
     els.gridHead.innerHTML = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((lbl,i)=>{
       if (i===0) return `<th class="time"></th>`;
       const d = addDays(mon, i-1);
@@ -170,26 +160,24 @@
       return `<th>${title}</th>`;
     }).join('');
 
-    // rows 9..17
     const rowsHtml = [];
     for(let h=HOURS.start; h<=HOURS.end; h++){
       const rowCells = [];
-      // time label
       const label = formatHour(h);
       rowCells.push(`<td class="time">${label}</td>`);
-      // 7 days
+
       for(let di=0; di<7; di++){
         const d = addDays(mon, di);
         const dayKey = dayKeyTz(d);
         const slotStart = h*60, slotEnd = (h+1)*60;
 
-        // who has *any* coverage in this slot?
+        // who has coverage in this slot?
         const peopleInSlot = PEOPLE.filter(p=>{
           const segs = (PERSON_DAY_SEGS[p.name]||{})[dayKey]||[];
           return segs.some(([a,b]) => (a<slotEnd && b>slotStart));
         });
 
-        // and who matches the selected skill?
+        // who matches the selected skill?
         const hits = selectedSkill
           ? peopleInSlot.filter(p => (p.skills||[]).includes(selectedSkill))
           : [];
@@ -197,19 +185,18 @@
         const hasCover = peopleInSlot.length > 0;
         const hasHit = hits.length > 0;
 
-        // Build a title for hover (keeps info accessible without text in the cell)
-        const title = (hasCover
-          ? `${peopleInSlot.map(p=>p.name).join(', ')}`
-          : '');
+        // names to show (always show on-duty names)
+        const displayNames = peopleInSlot.map(p=>p.name).join(' • ');
+        const title = displayNames;
 
         const cls = ['cell', hasCover?'cover':'', hasHit?'hit':''].join(' ').trim();
-        rowCells.push(`<td class="${cls}" title="${esc(title)}"></td>`);
+        const inner = hasCover ? `<div class="names">${esc(displayNames)}</div>` : '';
+        rowCells.push(`<td class="${cls}" title="${esc(title)}">${inner}</td>`);
       }
       rowsHtml.push(`<tr>${rowCells.join('')}</tr>`);
     }
     els.gridBody.innerHTML = rowsHtml.join('');
 
-    // try auto-resize for iframe
     try{
       const h = document.documentElement.scrollHeight;
       parent && parent.postMessage({type:'machines-grid-height', height:h}, '*');
@@ -223,7 +210,6 @@
   }
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-  // init
   renderChips();
   renderGrid();
 })();
