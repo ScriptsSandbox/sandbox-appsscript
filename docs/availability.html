@@ -108,10 +108,9 @@
       font-weight:600; color:#263042; line-height:1;
     }
 
-    /* Day columns */
+    /* Day columns with hour & half-hour guides */
     .daycol{
       position:relative; border-right:1px solid var(--edge);
-      /* Hour & half-hour grid lines */
       background:
         repeating-linear-gradient(to bottom,
           transparent 0, transparent calc(var(--hour) - 1px), var(--edge) calc(var(--hour) - 1px), var(--edge) var(--hour)),
@@ -119,11 +118,11 @@
           transparent 0, transparent calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2));
     }
 
-    /* Event blocks */
+    /* Event blocks (merged per-time-range) */
     .event{
       position:absolute; left:6px; right:6px;
-      border-radius:8px; padding:6px 8px;
-      background:rgba(2, 132, 199, .10); /* subtle base */
+      border-radius:10px; padding:6px 8px;
+      background:rgba(2,132,199,.10);
       border:1px solid #cfe9ef;
       color:#0b1220;
       transition:background-color var(--t) var(--e),border-color var(--t) var(--e),box-shadow var(--t) var(--e),opacity var(--t) var(--e),filter var(--t) var(--e);
@@ -135,18 +134,17 @@
       border-color:var(--accent);
       box-shadow:0 0 0 2px var(--accent) inset, 0 6px 16px rgba(0,0,0,.08);
     }
-    .ename{font-weight:400;margin-bottom:2px}
+    .ename{font-weight:600;margin-bottom:2px}
     .etime{color:var(--muted)}
 
     /* Dim non-matching events when filtered */
     .filtered .event{opacity:.78; filter:grayscale(10%)}
     .filtered .event.hit{opacity:1; filter:none}
 
-    /* Small view fix */
     @media (max-width: 760px){
       .cal-head{grid-template-columns:60px repeat(5,1fr)}
       .cal-body{grid-template-columns:60px repeat(5,1fr)}
-      .timecol{background-position-x: -4px}
+      .timecol{background-position-x:-4px}
     }
   </style>
 </head>
@@ -202,15 +200,13 @@
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
   function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
   function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-  function minutes(d){ return d.getHours()*60 + d.getMinutes(); }
 
-  // Build per-person day segments (minute ranges)
+  // Build person -> dayKey -> segments [startMin,endMin]
   function buildDaySegments(){
     const byName = {};
     for(const p of PEOPLE){
       const m = {};
       for(const a of (p.available||[])){
-        // Split by day
         let s=new Date(a.start), e=new Date(a.end);
         let cur = new Date(s);
         while(true){
@@ -228,12 +224,13 @@
     }
     return byName;
   }
-
+  function minutes(d){ return d.getHours()*60 + d.getMinutes(); }
   function dayKey(d){ return fmt(d,{year:'numeric'}) + '-' + fmt(d,{month:'2-digit'}) + '-' + fmt(d,{day:'2-digit'}); }
 
   const PERSON_DAY = buildDaySegments();
+  const SKILLS_BY_NAME = PEOPLE.reduce((acc,p)=>{ acc[p.name]=p.skills||[]; return acc; },{});
 
-  // Controls
+  // Week toggle
   els.btnThis.addEventListener('click', ()=>{ weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); render(); });
   els.btnNext.addEventListener('click', ()=>{ weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); render(); });
 
@@ -265,7 +262,7 @@
   function render(){
     const mon = addDays(mondayOfWeek(nowTz), weekOffsetDays);
 
-    // Head
+    // Head: time + Mon–Fri
     els.head.innerHTML = [
       `<div class="timecol"></div>`,
       ...DAY_LABELS.map((_,i)=>{
@@ -275,95 +272,104 @@
       })
     ].join('');
 
-    // Body grid: time col + 5 day columns
-    const totalMins = (HOURS.end - HOURS.start) * 60;
-    const hourRows = [];
-    for(let h=HOURS.start; h<=HOURS.end; h++){
-      const top = (h - HOURS.start) * varPx('--hour');
-      hourRows.push(`<div class="tlab" style="top:${(h-HOURS.start)*100/(HOURS.end-HOURS.start)}%">${formatHour(h)}</div>`);
-    }
-    const timeCol = `<div class="timecol">${hourRows.join('')}</div>`;
-
-    // Build event DOM per day
-    const dayCols = DAY_LABELS.map((_,i)=>{
-      const d = addDays(mon, i);
-      const key = dayKey(d);
-
-      // Collect events: one block per person availability chunk within day, clamped to working window
-      const evts = [];
-      for(const p of PEOPLE){
-        const segs = (PERSON_DAY[p.name]||{})[key] || [];
-        for(const [s,e] of segs){
-          const sRel = Math.max(0, s - HOURS.start*60);
-          const eRel = Math.min(totalMins, e - HOURS.start*60);
-          if (eRel <= 0 || sRel >= totalMins || eRel - sRel < 10) continue;
-          evts.push({
-            name: p.name,
-            skills: p.skills||[],
-            start: sRel, end: eRel
-          });
-        }
-      }
-
-      // Simple overlap layout (greedy columns)
-      evts.sort((a,b)=> a.start - b.start || (a.end - b.end));
-      const cols = []; // array of end times for active columns
-      evts.forEach(ev=>{
-        let col = 0;
-        for(; col<cols.length; col++){ if (ev.start >= cols[col]) break; }
-        cols[col] = ev.end;
-        ev.col = col;
-        ev.colCount = Math.max((ev.colCount||0), cols.length);
-      });
-      const colCount = cols.length || 1;
-
-      // Render
-      const blocks = evts.map(ev=>{
-        const topPct = (ev.start / totalMins) * 100;
-        const hPct   = ((ev.end - ev.start) / totalMins) * 100;
-        const widthPct = (100 / colCount);
-        const leftPct  = widthPct * ev.col;
-        // hit state is toggled later by updateEventHits()
-        const timeLabel = fmtTime(ev.start + HOURS.start*60) + '–' + fmtTime(ev.end + HOURS.start*60);
-        const skillStr = (ev.skills||[]).join('|');
-        return `<div class="event"
-                     data-skills="${escAttr(skillStr)}"
-                     style="top:${topPct}%; height:${hPct}%; left:${leftPct}%; width:${widthPct}%;"
-                     title="${esc(ev.name)} • ${esc(timeLabel)}">
-                  <div class="ename">${esc(ev.name)}</div>
-                  <div class="etime">${esc(timeLabel)}</div>
-                </div>`;
-      }).join('');
-
-      return `<div class="daycol">${blocks}</div>`;
-    });
+    // Body: time col + 5 day columns
+    const timeCol = buildTimeCol();
+    const dayCols = DAY_LABELS.map((_,i)=> buildDayCol(addDays(mon,i)));
 
     els.body.innerHTML = [timeCol, ...dayCols].join('');
 
-    // Apply current filter state
     els.wrap.classList.toggle('filtered', !!selectedSkill);
     updateEventHits();
 
-    // Try to resize iframe
     try{
       const h = document.documentElement.scrollHeight;
       parent && parent.postMessage({type:'machines-grid-height', height:h}, '*');
     }catch(e){}
   }
 
-  // Toggle .hit class on events (no re-render -> transitions visible)
+  function buildTimeCol(){
+    // hour labels aligned to top line of each hour row
+    const labels = [];
+    for(let h=HOURS.start; h<=HOURS.end; h++){
+      const top = (h - HOURS.start) * 100 / (HOURS.end - HOURS.start);
+      labels.push(`<div class="tlab" style="top:${top}%">${formatHour(h)}</div>`);
+    }
+    return `<div class="timecol">${labels.join('')}</div>`;
+  }
+
+  // BUILD A DAY COLUMN WITH MERGED BLOCKS BY PERSON-SET
+  function buildDayCol(d){
+    const key = dayKey(d);
+    const windowStart = HOURS.start * 60, windowEnd = HOURS.end * 60;
+    const total = windowEnd - windowStart;
+
+    // 1) collect boundaries (clamped) from all people
+    const bounds = new Set();
+    for(const name in PERSON_DAY){
+      const segs = (PERSON_DAY[name]||{})[key] || [];
+      for(const [s0,e0] of segs){
+        const s = Math.max(windowStart, s0);
+        const e = Math.min(windowEnd, e0);
+        if (e > s) { bounds.add(s); bounds.add(e); }
+      }
+    }
+    if (bounds.size === 0) return `<div class="daycol"></div>`;
+    const pts = Array.from(bounds).sort((a,b)=>a-b);
+
+    // 2) build piecewise-constant coverage over [pt[i],pt[i+1])
+    const slices = [];
+    for(let i=0; i<pts.length-1; i++){
+      const a = pts[i], b = pts[i+1];
+      if (b - a < 10) continue; // ignore <10min blips
+      const names = [];
+      for(const name in PERSON_DAY){
+        const segs = (PERSON_DAY[name]||{})[key] || [];
+        if (segs.some(([s,e]) => s < b && e > a)) names.push(name);
+      }
+      if (names.length){
+        // merge with previous if same set
+        const last = slices[slices.length-1];
+        const setKey = names.slice().sort().join('|');
+        if (last && last.key === setKey && Math.abs(last.end - a) < 0.001){
+          last.end = b;
+        } else {
+          slices.push({start:a, end:b, key:setKey, names:names.slice().sort()});
+        }
+      }
+    }
+
+    // 3) render blocks full-width (no side-by-side)
+    const blocks = slices.map(sl=>{
+      const startRel = sl.start - windowStart;
+      const endRel   = sl.end   - windowStart;
+      const topPct = (startRel / total) * 100;
+      const hPct   = ((endRel - startRel) / total) * 100;
+
+      // union skills across names
+      const skillSet = Array.from(new Set(sl.names.flatMap(n => SKILLS_BY_NAME[n] || [])));
+      const skillStr = skillSet.join('|');
+      const namesStr = sl.names.join(' + ');
+      const timeLabel = fmtTime(startRel + windowStart) + '–' + fmtTime(endRel + windowStart);
+
+      return `<div class="event"
+                   data-skills="${escAttr(skillStr)}"
+                   style="top:${topPct}%; height:${hPct}%;"
+                   title="${esc(namesStr)} • ${esc(timeLabel)}">
+                <div class="ename">${esc(namesStr)}</div>
+                <div class="etime">${esc(timeLabel)}</div>
+              </div>`;
+    }).join('');
+
+    return `<div class="daycol">${blocks}</div>`;
+  }
+
+  // Toggle .hit based on current selectedSkill (animate in place)
   function updateEventHits(){
-    const events = els.body.querySelectorAll('.event');
-    events.forEach(e=>{
+    els.body.querySelectorAll('.event').forEach(e=>{
       const skills = (e.dataset.skills || '').split('|').filter(Boolean);
       const hit = selectedSkill ? skills.includes(selectedSkill) : false;
       e.classList.toggle('hit', hit);
     });
-  }
-
-  function varPx(name){
-    // returns numeric px value from a CSS custom property (used for hour height if needed)
-    return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
   }
 
   function formatHour(h24){
@@ -378,7 +384,7 @@
     const h = ((h24+11)%12)+1;
     return `${h}${m?':'+String(m).padStart(2,'0'):''} ${ampm}`;
   }
-  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39'}[c])); }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function escAttr(s){ return (s==null?'':String(s)).replace(/"/g,'&quot;'); }
 
   // Init
