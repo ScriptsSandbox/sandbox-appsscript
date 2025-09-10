@@ -2,184 +2,226 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Sandbox Staff Availability</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Sandbox Staff — Weekly Schedule</title>
   <style>
     :root{
-      --page-grey:#f3f4f6; --text:#0f172a; --muted:#475569;
-      --card:#ffffff; --edge:#e5e7eb; --accent:#00C6D7; --ok:#22C55E; --warn:#F59E0B; --bad:#EF4444;
+      --bg:#6b7280;        /* page grey to match your site */
+      --card:#1f2937;      /* dark panel */
+      --text:#e5e7eb;      /* light text */
+      --muted:#cbd5e1;
+      --edge:#374151;
+      --pill:#111827;
+      --pillText:#f8fafc;
+      --accent:#00C6D7;
     }
-    html,body{margin:0;padding:0;background:var(--page-grey);color:var(--text);font:16px/1.45 system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
-    .wrap{max-width:1100px;margin:0 auto;padding:16px 16px 48px}
-    .hdr{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
-    .hdr h1{font-size:1.25rem;margin:0}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+      font:16px/1.45 system-ui,-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    h1{font-size:1.5rem;margin:0 0 4px 0}
     .muted{color:var(--muted)}
-    .card{background:var(--card);border:1px solid var(--edge);border-radius:14px;box-shadow:0 6px 12px rgba(0,0,0,.04)}
-    .pad{padding:14px}
-    .now-list{display:grid;gap:8px}
-    .chip{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid var(--edge);font-size:.78rem;background:#fff;margin-left:6px}
-    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:.78rem;background:#ecfeff;border:1px solid #0001;margin-left:6px}
-    .row{display:flex;gap:8px;align-items:center;justify-content:space-between}
-    .filters{display:flex;flex-wrap:wrap;gap:8px}
-    select,input{padding:8px 10px;border-radius:10px;border:1px solid var(--edge);background:#fff}
-    .days{display:grid;gap:12px;margin-top:12px}
-    .day{padding:12px;border:1px solid var(--edge);border-radius:12px;background:#fff}
-    .day h3{margin:0 0 6px 0;font-size:1rem}
-    .slot{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px;border:1px solid var(--edge);border-radius:10px;margin:6px 0}
-    .name{font-weight:600}
-    .bad{color:#fff;background:var(--bad);border-color:transparent}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+    .btn{background:var(--pill);color:var(--pillText);border:1px solid var(--edge);
+      padding:8px 12px;border-radius:999px;cursor:pointer}
+    .btn.ghost{background:transparent;color:var(--text)}
+    .btn.active{outline:2px solid var(--accent)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px}
+    .chip{background:#111827;color:#fff;border:1px solid var(--edge);padding:6px 10px;border-radius:999px;cursor:pointer;font-size:.85rem}
+    .chip.active{outline:2px solid var(--accent)}
+    .chip.reset{background:transparent;color:var(--text)}
+    .grid{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden}
+    .grid th,.grid td{border:1px solid var(--edge);padding:10px;vertical-align:top}
+    .grid thead th{background:#2b3441;color:#fff;font-weight:600;text-align:left}
+    .time{white-space:nowrap;width:110px}
+    .names{font-weight:700}
+    .skills{color:var(--muted);font-size:.9rem;margin-top:2px}
+    .hdr{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+    .hdr small{color:var(--muted)}
   </style>
 </head>
 <body>
 <div class="wrap">
   <div class="hdr">
-    <h1>Sandbox Staff Availability</h1>
-    <div class="muted" id="updated">Updated …</div>
+    <h1>Sandbox Staff — Weekly Schedule</h1>
+    <small>Filter by skill, and switch between <b>This Week</b> and <b>Next Week</b>.</small>
   </div>
 
-  <div class="card pad">
-    <div class="row" style="margin-bottom:8px">
-      <strong>Who’s on now</strong>
-      <div class="filters">
-        <input id="q" type="search" placeholder="Search name or skill"/>
-        <select id="loc"><option value="">All locations</option></select>
-      </div>
-    </div>
-    <div class="now-list" id="nowList"></div>
+  <div class="toolbar">
+    <button id="btnThis" class="btn active">This Week</button>
+    <button id="btnNext" class="btn ghost">Next Week</button>
   </div>
+  <div class="chips" id="skillChips"></div>
 
-  <div style="height:12px"></div>
-
-  <div class="card pad">
-    <div class="row" style="margin-bottom:8px">
-      <strong>This week + next</strong>
-      <div class="filters">
-        <select id="dayfilter">
-          <option value="">All days</option>
-          <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
-          <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
-        </select>
-      </div>
-    </div>
-    <div class="days" id="days"></div>
-  </div>
+  <table class="grid" id="grid">
+    <thead><tr id="headRow"></tr></thead>
+    <tbody id="bodyRows"></tbody>
+  </table>
 </div>
 
 <script>
 (async function(){
+  // ---- load data ----
+  const data = await fetch('./data/availability.json', {cache:'no-cache'}).then(r=>r.json());
+  const tz = data.tz || 'America/Los_Angeles';
+  const PEOPLE = data.people || [];
+  const ALL_SKILLS = (data.skills && data.skills.length)
+    ? data.skills
+    : Array.from(new Set(PEOPLE.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
+
+  // ---- DOM ----
   const els = {
-    updated: document.getElementById('updated'),
-    nowList: document.getElementById('nowList'),
-    q: document.getElementById('q'),
-    loc: document.getElementById('loc'),
-    days: document.getElementById('days'),
-    dayfilter: document.getElementById('dayfilter')
+    gridHead: document.getElementById('headRow'),
+    gridBody: document.getElementById('bodyRows'),
+    chips: document.getElementById('skillChips'),
+    btnThis: document.getElementById('btnThis'),
+    btnNext: document.getElementById('btnNext')
   };
 
-  const data = await fetch('./../data/availability.json', {cache:'no-cache'}).then(r=>r.json());
-  const tz = data.tz || 'America/Los_Angeles';
+  // ---- state ----
+  const HOURS = { start: 9, end: 17 };            // 9am..5pm as hourly slots
+  let weekOffsetDays = 0;                         // 0 = this week, 7 = next week
+  let selectedSkill = '';                         // filter off by default
 
-  const people = data.people || [];
-  const allLocs = [...new Set(people.map(p=>p.location).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  allLocs.forEach(l => { const o=document.createElement('option'); o.value=l; o.textContent=l; els.loc.appendChild(o); });
+  // ---- util: TZ formatting and math ----
+  const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
+  const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
 
-  const fmtDate = (ms, opts) => new Intl.DateTimeFormat('en-US', { timeZone: tz, ...opts }).format(new Date(ms));
-  const fmtTime = (iso) => new Intl.DateTimeFormat('en-US', { timeZone: tz, hour:'numeric', minute:'2-digit' }).format(new Date(iso));
-  const nowPT = new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+  function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
 
-  els.updated.textContent = 'Updated ' + new Intl.RelativeTimeFormat('en', {numeric:'auto'}).format(-Math.round((nowPT - new Date(data.updated))/60000), 'minute');
-
-  function personMatchesFilters(p){
-    const q = (els.q.value||'').toLowerCase();
-    const loc = els.loc.value;
-    if (loc && p.location !== loc) return false;
-    if (q) {
-      const hay = [p.name, p.location, ...(p.skills||[])].join(' ').toLowerCase();
-      if (!hay.includes(q)) return false;
+  // Build per-person, per-day segments in minutes after midnight (in tz)
+  function buildDaySegments(){
+    const byName = {};
+    for(const p of PEOPLE){
+      const segMap = {};
+      for(const a of (p.available||[])){
+        splitIntoDaysAndPush(segMap, a.start, a.end);
+      }
+      byName[p.name] = segMap;   // { 'YYYY-MM-DD': [ [startMin,endMin], ... ] }
     }
-    return true;
+    return byName;
   }
 
-  function intervalsToday(p){
-    const out = [];
-    const startOfToday = new Date(new Date(nowPT).setHours(0,0,0,0));
-    const endOfToday = new Date(new Date(nowPT).setHours(23,59,59,999));
-    for (const a of (p.available||[])) {
-      const s = new Date(a.start), e = new Date(a.end);
-      if (e <= startOfToday || s >= endOfToday) continue;
-      out.push({start: new Date(Math.max(s, startOfToday)), end: new Date(Math.min(e, endOfToday))});
+  function splitIntoDaysAndPush(map, isoStart, isoEnd){
+    // Convert to tz day keys and minutes-of-day
+    const s = new Date(isoStart), e = new Date(isoEnd);
+    let cur = new Date(s);
+    while (true){
+      const dayKey = dayKeyTz(cur);
+      const dayStartMin = minutesOfDayTz(cur);
+      const nextDay = new Date(cur); nextDay.setDate(nextDay.getDate()+1); nextDay.setHours(0,0,0,0);
+      const endForDay = (e <= nextDay) ? e : nextDay;
+      const endMin = minutesOfDayTz(endForDay);
+      pushSeg(map, dayKey, dayStartMin, endMin);
+      if (e <= nextDay) break;
+      cur = nextDay;
     }
-    return out;
   }
 
-  function isNowAvailable(p){
-    return (p.available||[]).some(a => (new Date(a.start) <= nowPT && new Date(a.end) > nowPT));
+  function pushSeg(map, key, a, b){
+    if (!map[key]) map[key] = [];
+    // clip to sane limits
+    const start = Math.max(0, Math.min(24*60, a));
+    const end   = Math.max(0, Math.min(24*60, b));
+    if (end>start) map[key].push([start,end]);
   }
 
-  function renderNow(){
-    const list = people.filter(personMatchesFilters).filter(isNowAvailable);
-    if (!list.length) {
-      els.nowList.innerHTML = '<div class="muted">No one is currently on. Check the schedule below.</div>';
-      return;
-    }
-    list.sort((a,b)=>a.name.localeCompare(b.name));
-    els.nowList.innerHTML = list.map(p => {
-      const cur = (p.available||[]).find(a => new Date(a.start)<=nowPT && new Date(a.end)>nowPT);
-      const until = cur ? fmtTime(cur.end) : '';
-      const skills = (p.skills||[]).map(s => `<span class="pill">${esc(s)}</span>`).join('');
-      return `<div class="row">
-        <div><span class="name">${esc(p.name)}</span> <span class="chip">${esc(p.location||'')}</span> ${skills}</div>
-        <div class="muted">until ${esc(until)}</div>
-      </div>`;
+  function dayKeyTz(d){
+    const y = fmt(d,{year:'numeric'}), m = fmt(d,{month:'2-digit'}), da = fmt(d,{day:'2-digit'});
+    return `${y}-${m}-${da}`;
+  }
+  function minutesOfDayTz(d){
+    const hh = parseInt(fmt(d,{hour:'2-digit',hour12:false}),10);
+    const mm = parseInt(fmt(d,{minute:'2-digit'}),10);
+    return hh*60+mm;
+  }
+
+  const PERSON_DAY_SEGS = buildDaySegments();
+
+  // ---- chips ----
+  function renderChips(){
+    const chips = ['Reset filter', ...ALL_SKILLS];
+    els.chips.innerHTML = chips.map((s,i)=>{
+      const isReset = i===0;
+      const active = isReset ? !selectedSkill : (selectedSkill===s);
+      const cls = ['chip', isReset?'reset':'', active?'active':''].join(' ').trim();
+      return `<button class="${cls}" data-skill="${isReset?'':s}">${s}</button>`;
     }).join('');
-  }
-
-  function renderDays(){
-    const filterDay = els.dayfilter.value;
-    const days = [];
-    for (let d=0; d<14; d++){
-      const day = new Date(nowPT); day.setDate(day.getDate()+d); day.setHours(0,0,0,0);
-      if (filterDay!=='' && String(day.getDay())!==filterDay) continue;
-      const label = fmtDate(day, {weekday:'long', month:'short', day:'numeric'});
-      const items = [];
-      people.filter(personMatchesFilters).forEach(p=>{
-        (p.available||[]).forEach(a=>{
-          const s=new Date(a.start), e=new Date(a.end);
-          if (e<=day || s>=new Date(day.getTime()+86400000)) return;
-          const ss = fmtTime(Math.max(s, day));
-          const ee = fmtTime(Math.min(e, new Date(day.getTime()+86400000)));
-          items.push({name:p.name, loc:p.location||'', skills:p.skills||[], ss, ee, day:getDayKey_(day)});
-        });
+    els.chips.querySelectorAll('.chip').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedSkill = btn.dataset.skill || '';
+        renderGrid();
       });
-      items.sort((a,b)=> a.ss.localeCompare(b.ss) || a.name.localeCompare(b.name));
-      days.push({label, items});
-    }
-    els.days.innerHTML = days.map(d=>{
-      const rows = d.items.length ? d.items.map(it=>(
-        `<div class="slot">
-           <div><span class="name">${esc(it.name)}</span> <span class="chip">${esc(it.loc)}</span> ${(it.skills||[]).map(s=>`<span class="pill">${esc(s)}</span>`).join('')}</div>
-           <div class="muted">${esc(it.ss)}–${esc(it.ee)}</div>
-         </div>`
-      )).join('') : '<div class="muted">No coverage</div>';
-      return `<div class="day"><h3>${esc(d.label)}</h3>${rows}</div>`;
-    }).join('');
+    });
   }
 
-  function getDayKey_(d){ return d.toISOString().slice(0,10); }
-  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  // ---- week switch ----
+  els.btnThis.addEventListener('click', ()=>{ weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); renderGrid(); });
+  els.btnNext.addEventListener('click', ()=>{ weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); renderGrid(); });
 
-  els.q.addEventListener('input', ()=>{ renderNow(); renderDays(); });
-  els.loc.addEventListener('input', ()=>{ renderNow(); renderDays(); });
-  els.dayfilter.addEventListener('input', ()=>{ renderDays(); });
+  // ---- grid ----
+  function renderGrid(){
+    const mon = addDays(mondayOfWeek(nowTz), weekOffsetDays);
+    // header
+    els.gridHead.innerHTML = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((lbl,i)=>{
+      if (i===0) return `<th class="time"></th>`;
+      const d = addDays(mon, i-1);
+      const title = fmt(d,{weekday:'short'}) + ' ' + fmt(d,{month:'numeric'}) + '/' + fmt(d,{day:'numeric'});
+      return `<th>${title}</th>`;
+    }).join('');
 
-  renderNow();
-  renderDays();
+    // rows 9..17
+    const rowsHtml = [];
+    for(let h=HOURS.start; h<=HOURS.end; h++){
+      const rowCells = [];
+      // time label
+      const label = formatHour(h);
+      rowCells.push(`<td class="time">${label}</td>`);
+      // 7 days
+      for(let di=0; di<7; di++){
+        const d = addDays(mon, di);
+        const dayKey = dayKeyTz(d);
+        const slotStart = h*60, slotEnd = (h+1)*60;
 
-  // Try to auto-size iframe
-  try {
-    const postHeight = () => parent && parent.postMessage({type:'machines-grid-height', height:document.documentElement.scrollHeight}, '*');
-    window.addEventListener('load', postHeight); window.addEventListener('resize', postHeight);
-  } catch(e){}
+        // who matches this slot?
+        let persons = PEOPLE.filter(p=>{
+          if (selectedSkill && !(p.skills||[]).includes(selectedSkill)) return false;
+          const segs = (PERSON_DAY_SEGS[p.name]||{})[dayKey]||[];
+          return segs.some(([a,b]) => (a<slotEnd && b>slotStart));
+        });
+
+        // names + union-of-skills
+        persons.sort((a,b)=>a.name.localeCompare(b.name));
+        const names = persons.map(p=>p.name).join(' · ');
+        const skillsUnion = Array.from(new Set(persons.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
+        const skillsLine = skillsUnion.join(', ');
+
+        const cell = persons.length
+          ? `<div class="names">${esc(names)}</div><div class="skills">${esc(skillsLine)}</div>`
+          : '';
+        rowCells.push(`<td>${cell}</td>`);
+      }
+      rowsHtml.push(`<tr>${rowCells.join('')}</tr>`);
+    }
+    els.gridBody.innerHTML = rowsHtml.join('');
+
+    // try auto-resize for iframe
+    try{
+      const h = document.documentElement.scrollHeight;
+      parent && parent.postMessage({type:'machines-grid-height', height:h}, '*');
+    }catch(e){}
+  }
+
+  function formatHour(h24){
+    const ampm = h24>=12 ? 'PM' : 'AM';
+    const h = ((h24+11)%12)+1;
+    return `${h}:00 ${ampm}`;
+  }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // init
+  renderChips();
+  renderGrid();
 })();
 </script>
 </body>
