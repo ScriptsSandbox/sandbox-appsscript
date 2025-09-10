@@ -1,5 +1,5 @@
 {
-  "updated": "2025-09-10T17:30:46.858Z",
+  "updated": "2025-09-10T17:32:00.358Z",
   "tz": "America/Los_Angeles",
   "window": {
     "start": "2025-09-08T07:00:00.000Z",
@@ -21,25 +21,13 @@
   "people": [
     {
       "name": "Arnav",
-      "location": "CERT",
+      "location": "Main Room",
       "skills": [
         "3D Printing",
         "Fusion 360",
         "Laser Cutting"
       ],
       "available": [
-        {
-          "start": "2025-09-08T15:30:00.000Z",
-          "end": "2025-09-08T23:30:00.000Z"
-        },
-        {
-          "start": "2025-09-09T15:30:00.000Z",
-          "end": "2025-09-09T23:30:00.000Z"
-        },
-        {
-          "start": "2025-09-10T15:30:00.000Z",
-          "end": "2025-09-10T23:30:00.000Z"
-        },
         {
           "start": "2025-09-11T16:00:00.000Z",
           "end": "2025-09-11T19:00:00.000Z"
