@@ -1,288 +1,299 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Sandbox Weekly Staff Calendar</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sandbox Staff — Weekly Schedule</title>
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
     :root{
-      --bg:#747678; --grid:#B6B1A9; --text:#F5F0E6; --accent:#00C6D7;
-      --cell-bg: rgba(255,255,255,0.02); --dim: 0.35;
+      --page:#747678;      /* page bg */
+      --card:#ffffff;      /* card bg */
+      --card-warm:#F5F0E6; /* not used by default, available */
+      --text:#14181f;
+      --muted:#5b6573;
+      --edge:#e5e7eb;
+
+      --accent:#00C6D7;
+      --orange:#FC8900;
+
+      --coverA: rgba(0,0,0,.04);     /* any coverage */
+      --hitA:   rgba(0,198,215,.22); /* selected-skill match */
     }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
-    .wrap{max-width:1200px;margin:0 auto;padding:16px; opacity:0; transition:opacity .25s ease;}
-    .wrap.ready{opacity:1;}
-    h1{margin:0 0 8px 0;font-size:20px;font-weight:600;}
-    .subtle{opacity:.85;font-size:12px;margin-bottom:12px;}
 
-    .topbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
-    .navbtn,.chip{border:1px solid var(--grid);color:var(--text);background:transparent;
-      padding:6px 10px;border-radius:999px;cursor:pointer;font-size:12px;line-height:1;
-      transition:box-shadow .15s, background .15s, color .15s, opacity .15s;}
-    .navbtn[disabled]{opacity:.55;cursor:not-allowed}
-    .navbtn.active,.chip.selected{background:var(--accent);color:#0c1b1c;border-color:var(--accent);}
-    .chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px 0}
-    .chip:hover,.navbtn:hover{box-shadow:0 0 0 2px rgba(0,0,0,.12) inset;}
-
-    .status{font-size:12px;opacity:.85;margin-left:8px;min-height:1em}
-
-    .calendar{display:grid;grid-template-columns:90px repeat(7,1fr);
-      border-top:1px solid var(--grid);border-left:1px solid var(--grid)}
-    .cell{border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);
-      padding:6px 8px;min-height:46px;position:relative;background:var(--cell-bg);
-      transition:filter .15s, opacity .15s, box-shadow .15s, outline .15s;}
-    .cell.dim{opacity:var(--dim);}
-    .cell.match{outline:2px solid var(--accent);
-      box-shadow:0 0 14px rgba(0,198,215,.45) inset, 0 0 6px rgba(0,198,215,.25)}
-    .header{background:rgba(255,255,255,.04);font-weight:600;text-align:center}
-    .time{background:rgba(255,255,255,.04);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
-    .names{font-size:12px;font-weight:600}
-    .meta{font-size:11px;opacity:.85;margin-top:2px}
-    .skills{margin-top:4px;font-size:10px;opacity:.8}
-
-    /* Mobile list */
-    @media(max-width:840px){
-      .calendar{display:none}
-      .mobile{display:block}
-      .day-card{border:1px solid var(--grid);border-radius:10px;padding:8px;margin-bottom:12px;background:rgba(255,255,255,.03)}
-      .day-title{font-weight:700;margin-bottom:6px}
-      .slot{display:flex;gap:8px;padding:6px 0;border-top:1px solid var(--grid)}
-      .slot:first-of-type{border-top:0}
-      .slot-time{min-width:60px;font-weight:600;font-size:12px}
-      .slot-body{font-size:12px}
+    html,body{
+      margin:0; padding:0;
+      background:var(--page); color:var(--text);
+      font:16px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-    @media(min-width:841px){ .mobile{display:none} }
+    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
 
-    /* Loading overlay */
-    .loading{
-      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-      background:var(--bg); z-index:999; transition:opacity .2s ease; opacity:1;
+    /* Header card */
+    .header-card{
+      background:var(--card);
+      border:1px solid var(--edge);
+      border-radius:20px;
+      box-shadow:0 8px 20px rgba(0,0,0,.06);
+      padding:14px 16px;
+      display:flex; align-items:center; gap:12px;
+      margin-bottom:14px;
     }
-    .loading.hidden{opacity:0; pointer-events:none;}
-    .spinner{
-      width:40px; height:40px; border-radius:50%;
-      border:3px solid rgba(255,255,255,.25);
-      border-top-color: var(--accent);
-      animation: spin 0.9s linear infinite;
-      margin-bottom:10px;
-    }
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .loadbox{display:flex; flex-direction:column; align-items:center; gap:8px}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+    .header-text h1{font-size:1.2rem; margin:0 0 2px 0; font-weight:700}
+    .sub{color:var(--muted); font-size:.93rem}
 
-    .error{border:1px solid rgba(255,0,0,.5); background:rgba(255,0,0,.08); color:#fff; padding:8px 10px; border-radius:8px; font-size:12px; margin:8px 0;}
+    /* Controls row */
+    .controls{
+      background:var(--card);
+      border:1px solid var(--edge);
+      border-radius:16px;
+      box-shadow:0 8px 20px rgba(0,0,0,.04);
+      padding:10px 12px;
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+      margin-bottom:12px;
+    }
+    .seg{
+      display:inline-flex; gap:6px; background:#fff; border:1px solid var(--edge);
+      border-radius:999px; padding:4px;
+    }
+    .seg button{
+      appearance:none; border:0; background:transparent; color:var(--text);
+      padding:8px 14px; border-radius:999px; cursor:pointer; font-weight:600;
+      transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
+    }
+    .seg button.active{
+      background:var(--accent); color:#042226;
+      box-shadow:0 0 0 2px var(--accent) inset;
+    }
+
+    .chips{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{
+      appearance:none; border:1px solid var(--edge); background:#fff; color:#0b1220;
+      padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:400; /* non-bold */
+      box-shadow:0 1px 0 rgba(0,0,0,.02);
+      transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
+    }
+    .chip.reset{color:var(--muted); background:#fff}
+    .chip.active{
+      background:var(--accent); color:#06262A; border-color:transparent;
+      box-shadow:0 0 0 2px var(--accent) inset;
+    }
+
+    /* Grid table */
+    .grid{
+      width:100%; border-collapse:separate; border-spacing:0;
+      background:var(--card);
+      border:1px solid var(--edge);
+      border-radius:20px; overflow:hidden;
+      box-shadow:0 10px 24px rgba(0,0,0,.06);
+      transition: filter 200ms ease, opacity 200ms ease;
+    }
+    .grid thead th{
+      background:#f3f4f6; color:#0f172a; font-weight:700; text-align:left;
+      padding:12px 12px; border-bottom:1px solid var(--edge);
+      transition: color 200ms ease, background-color 200ms ease, opacity 200ms ease, filter 200ms ease;
+    }
+    .grid th, .grid td{border-right:1px solid var(--edge)}
+    .grid th:last-child, .grid td:last-child{border-right:0}
+    .time{white-space:nowrap; width:120px; font-weight:600; color:#263042}
+    .grid tbody td{height:56px; padding:6px 10px}
+
+    /* cells */
+    .cell{
+      border-top:1px solid var(--edge); border-bottom:1px solid var(--edge); border-right:1px solid var(--edge); border-left:0;
+      transition: background-color 200ms ease, outline-color 200ms ease, opacity 200ms ease, filter 200ms ease;
+    }
+    .cell.cover{background:var(--coverA)}
+    .cell.hit{background:var(--hitA); outline:2px solid var(--accent); outline-offset:-2px}
+    .names{font-weight:400; letter-spacing:.15px} /* non-bold */
+
+    /* When a filter is active, softly de-emphasize non-hit cells */
+    .filtered .grid td.cell{ opacity:.78; filter: grayscale(10%); }
+    .filtered .grid td.cell.hit{ opacity:1; filter:none; }
+    .filtered .grid thead th{ opacity:.9; } /* subtle */
   </style>
 </head>
 <body>
-  <div id="loading" class="loading" role="status" aria-live="polite" aria-label="Loading schedule">
-    <div class="loadbox">
-      <div class="spinner" aria-hidden="true"></div>
-      <div>Loading schedule…</div>
-      <div class="sr-only">Please wait while we load the weekly schedule.</div>
-    </div>
-  </div>
-
-  <div id="app" class="wrap" aria-busy="true">
-    <h1>Sandbox Staff — Weekly Schedule</h1>
-    <div class="subtle">Filter by skill, and switch between <strong>This Week</strong> and <strong>Next Week</strong>.</div>
-
-    <div class="topbar">
-      <button id="btnThis" class="navbtn">This Week</button>
-      <button id="btnNext" class="navbtn">Next Week</button>
-      <div id="status" class="status" aria-live="polite"></div>
-      <div style="flex:1"></div>
-      <div id="chips" class="chips" role="toolbar" aria-label="Skill filters"></div>
+  <div class="wrap" id="wrap">
+    <div class="header-card">
+      <div class="header-text">
+        <h1>Sandbox Staff — Weekly Schedule</h1>
+        <div class="sub">Filter by skill; matching cells highlight. Use “This Week / Next Week”.</div>
+      </div>
     </div>
 
-    <div id="err" class="error" style="display:none"></div>
+    <div class="controls">
+      <div class="seg" role="tablist" aria-label="Week switch">
+        <button id="btnThis" class="active" role="tab" aria-selected="true">This Week</button>
+        <button id="btnNext" class="" role="tab" aria-selected="false">Next Week</button>
+      </div>
+      <div class="chips" id="skillChips"></div>
+    </div>
 
-    <div id="cal" class="calendar" aria-label="Weekly calendar grid"></div>
-    <div id="mob" class="mobile" aria-label="Weekly schedule list"></div>
+    <table class="grid" id="grid" aria-label="Weekly staff availability">
+      <thead><tr id="headRow"></tr></thead>
+      <tbody id="bodyRows"></tbody>
+    </table>
   </div>
 
-  <script>
-    const INIT_OFFSET = parseInt('<?= INIT_OFFSET ?>', 10) || 0;
-    let DATA = null;
-    let selectedSkill = null;
-    const CACHE = {};
+<script>
+(async function(){
+  const data = await fetch('./data/availability.json', {cache:'no-cache'}).then(r=>r.json());
+  const tz = data.tz || 'America/Los_Angeles';
+  const PEOPLE = data.people || [];
+  const ALL_SKILLS = (data.skills && data.skills.length)
+    ? data.skills
+    : Array.from(new Set(PEOPLE.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
 
-    const app = document.getElementById('app');
-    const loader = document.getElementById('loading');
-    const statusEl = document.getElementById('status');
-    const errEl = document.getElementById('err');
-    const btnThis = document.getElementById('btnThis');
-    const btnNext = document.getElementById('btnNext');
+  const els = {
+    wrap: document.getElementById('wrap'),
+    gridHead: document.getElementById('headRow'),
+    gridBody: document.getElementById('bodyRows'),
+    chips: document.getElementById('skillChips'),
+    btnThis: document.getElementById('btnThis'),
+    btnNext: document.getElementById('btnNext')
+  };
 
-    btnThis.onclick = () => setWeek(0);
-    btnNext.onclick = () => setWeek(1);
+  const HOURS = { start: 9, end: 17 }; // 9–5 hourly slots
+  let weekOffsetDays = 0;
+  let selectedSkill = '';
 
-    function setLoading(blocking){
-      if (blocking){ loader.classList.remove('hidden'); app.setAttribute('aria-busy','true'); }
-      else { loader.classList.add('hidden'); app.setAttribute('aria-busy','false'); app.classList.add('ready'); }
+  const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
+  const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
+  function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+
+  function buildDaySegments(){
+    const byName = {};
+    for(const p of PEOPLE){
+      const segMap = {};
+      for(const a of (p.available||[])) splitIntoDaysAndPush(segMap, a.start, a.end);
+      byName[p.name] = segMap;
     }
-    function setWorking(text){ statusEl.textContent = text || ''; }
-    function setButtonsDisabled(disabled){ btnThis.disabled = disabled; btnNext.disabled = disabled; }
-    function showError(msg){ errEl.textContent = msg || 'Something went wrong loading the schedule.'; errEl.style.display='block'; }
-    function clearError(){ errEl.style.display='none'; errEl.textContent=''; }
-
-    function setWeek(offset){
-      offset = Math.max(0, Math.min(1, offset|0));
-      clearError();
-
-      if (CACHE[offset]) {
-        DATA = CACHE[offset];
-        renderAll();
-        updateHighlight();
-        btnThis.classList.toggle('active', offset===0);
-        btnNext.classList.toggle('active', offset===1);
-        setWorking('Updating…');
-      } else {
-        setButtonsDisabled(true);
-        setLoading(true);
-      }
-
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(d => {
-            CACHE[offset] = d;
-            DATA = d;
-            renderAll();
-            updateHighlight();
-            btnThis.classList.toggle('active', offset===0);
-            btnNext.classList.toggle('active', offset===1);
-            setButtonsDisabled(false);
-            setWorking('');
-            setLoading(false);
-          })
-          .withFailureHandler(e => {
-            setButtonsDisabled(false);
-            setWorking('');
-            setLoading(false);
-            showError('Could not load schedule. Try again.');
-          })
-          .getCalendarData(offset);
-      } else {
-        const url = new URL(window.location.href);
-        url.searchParams.set('offset', String(offset));
-        window.location.replace(url.toString());
-      }
+    return byName;
+  }
+  function splitIntoDaysAndPush(map, isoStart, isoEnd){
+    const s = new Date(isoStart), e = new Date(isoEnd);
+    let cur = new Date(s);
+    while (true){
+      const key = dayKeyTz(cur);
+      const startMin = minutesOfDayTz(cur);
+      const nextDay = new Date(cur); nextDay.setDate(nextDay.getDate()+1); nextDay.setHours(0,0,0,0);
+      const endForDay = (e <= nextDay) ? e : nextDay;
+      const endMin = minutesOfDayTz(endForDay);
+      pushSeg(map, key, startMin, endMin);
+      if (e <= nextDay) break;
+      cur = nextDay;
     }
+  }
+  function pushSeg(map, key, a, b){
+    if (!map[key]) map[key] = [];
+    const start = Math.max(0, Math.min(24*60, a));
+    const end   = Math.max(0, Math.min(24*60, b));
+    if (end>start) map[key].push([start,end]);
+  }
+  function dayKeyTz(d){
+    const y = fmt(d,{year:'numeric'}), m = fmt(d,{month:'2-digit'}), da = fmt(d,{day:'2-digit'});
+    return `${y}-${m}-${da}`;
+  }
+  function minutesOfDayTz(d){
+    const hh = parseInt(fmt(d,{hour:'2-digit',hour12:false}),10);
+    const mm = parseInt(fmt(d,{minute:'2-digit'}),10);
+    return hh*60+mm;
+  }
 
-    function renderAll(){
-      buildChips(DATA.skills || []);
-      buildCalendar(DATA.dayLabels, DATA.hourLabels, DATA.grid);
-      buildMobile(DATA.dayLabels, DATA.hourLabels, DATA.grid);
-    }
+  const PERSON_DAY_SEGS = buildDaySegments();
 
-    function buildChips(skills) {
-      const el = document.getElementById('chips');
-      el.innerHTML = '';
-      skills.forEach(name => {
-        const b = document.createElement('button');
-        b.className = 'chip';
-        b.type = 'button';
-        b.textContent = name;
-        if (selectedSkill === name) b.classList.add('selected');
-        b.addEventListener('click', () => {
-          const already = selectedSkill === name;
-          selectedSkill = already ? null : name;
-          for (const c of el.querySelectorAll('.chip')) c.classList.remove('selected');
-          if (!already) b.classList.add('selected');
-          updateHighlight();
+  function renderChips(){
+    const chips = ['Reset filter', ...ALL_SKILLS];
+    els.chips.innerHTML = chips.map((s,i)=>{
+      const isReset = i===0;
+      const active = isReset ? !selectedSkill : (selectedSkill===s);
+      const cls = ['chip', isReset?'reset':'', active?'active':''].join(' ').trim();
+      return `<button class="${cls}" data-skill="${isReset?'':s}" aria-pressed="${active}">${s}</button>`;
+    }).join('');
+    els.chips.querySelectorAll('.chip').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        selectedSkill = btn.dataset.skill || '';
+        els.wrap.classList.toggle('filtered', !!selectedSkill); // dim non-hit cells
+        renderGrid();
+        // refresh chip states
+        els.chips.querySelectorAll('.chip').forEach(b=>{
+          const isReset = b.dataset.skill==="";
+          b.classList.toggle('active', isReset ? !selectedSkill : (selectedSkill===b.dataset.skill));
+          b.setAttribute('aria-pressed', isReset ? (!selectedSkill) : (selectedSkill===b.dataset.skill));
         });
-        el.appendChild(b);
       });
-      const reset = document.createElement('button');
-      reset.className = 'chip';
-      reset.textContent = 'Reset filter';
-      reset.onclick = () => { selectedSkill = null; updateHighlight(); for (const c of el.querySelectorAll('.chip')) c.classList.remove('selected'); };
-      el.appendChild(reset);
-    }
+    });
+  }
 
-    function buildCalendar(dayLabels, hourLabels, grid) {
-      const cal = document.getElementById('cal');
-      cal.innerHTML = '';
-      cal.appendChild(cell('', 'header'));
-      dayLabels.forEach(lbl => cal.appendChild(cell(lbl, 'header')));
-      for (let r=0; r<hourLabels.length; r++) {
-        cal.appendChild(cell(hourLabels[r], 'time'));
-        for (let d=0; d<7; d++) {
-          cal.appendChild(dayCell(grid[r][d]));
-        }
+  els.btnThis.addEventListener('click', ()=>{
+    weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); renderGrid();
+  });
+  els.btnNext.addEventListener('click', ()=>{
+    weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); renderGrid();
+  });
+
+  function renderGrid(){
+    const mon = addDays(mondayOfWeek(nowTz), weekOffsetDays);
+
+    els.gridHead.innerHTML = ['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((lbl,i)=>{
+      if (i===0) return `<th class="time"></th>`;
+      const d = addDays(mon, i-1);
+      const title = fmt(d,{weekday:'short'}) + ' ' + fmt(d,{month:'numeric'}) + '/' + fmt(d,{day:'numeric'});
+      return `<th>${title}</th>`;
+    }).join('');
+
+    const rows = [];
+    for(let h=HOURS.start; h<=HOURS.end; h++){
+      const cells = [];
+      cells.push(`<td class="time">${formatHour(h)}</td>`);
+
+      for(let di=0; di<7; di++){
+        const d = addDays(mon, di);
+        const dayKey = dayKeyTz(d);
+        const slotStart = h*60, slotEnd = (h+1)*60;
+
+        const peopleInSlot = PEOPLE.filter(p=>{
+          const segs = (PERSON_DAY_SEGS[p.name]||{})[dayKey]||[];
+          return segs.some(([a,b]) => (a<slotEnd && b>slotStart));
+        });
+        const hits = selectedSkill
+          ? peopleInSlot.filter(p => (p.skills||[]).includes(selectedSkill))
+          : [];
+
+        const hasCover = peopleInSlot.length>0;
+        const hasHit = hits.length>0;
+        const displayNames = peopleInSlot.map(p=>p.name).join(' • ');
+
+        const cls = ['cell', hasCover?'cover':'', hasHit?'hit':''].join(' ').trim();
+        const inner = hasCover ? `<div class="names">${esc(displayNames)}</div>` : '';
+        cells.push(`<td class="${cls}" title="${esc(displayNames)}">${inner}</td>`);
       }
+      rows.push(`<tr>${cells.join('')}</tr>`);
     }
+    els.gridBody.innerHTML = rows.join('');
 
-    function buildMobile(dayLabels, hourLabels, grid) {
-      const mob = document.getElementById('mob');
-      mob.innerHTML = '';
-      for (let d=0; d<7; d++) {
-        const card = document.createElement('div'); card.className='day-card';
-        const title = document.createElement('div'); title.className='day-title'; title.textContent = dayLabels[d];
-        card.appendChild(title);
-        for (let r=0; r<hourLabels.length; r++) {
-          const slot = document.createElement('div'); slot.className='slot';
-          const t = document.createElement('div'); t.className='slot-time'; t.textContent = hourLabels[r];
-          const body = document.createElement('div'); body.className='slot-body';
-          body.appendChild(buildCellInner(grid[r][d]));
-          slot.appendChild(t); slot.appendChild(body);
-          card.appendChild(slot);
-        }
-        mob.appendChild(card);
-      }
-    }
+    try{
+      const h = document.documentElement.scrollHeight;
+      parent && parent.postMessage({type:'machines-grid-height', height:h}, '*');
+    }catch(e){}
+  }
 
-    function cell(text, className) {
-      const div = document.createElement('div');
-      div.className = 'cell ' + (className||'');
-      if (text) div.textContent = text;
-      return div;
-    }
-    function dayCell(c) {
-      const div = document.createElement('div');
-      div.className = 'cell';
-      div.dataset.skills = (c.skills||[]).join('|');
-      div.appendChild(buildCellInner(c));
-      return div;
-    }
-    function buildCellInner(c) {
-      const frag = document.createDocumentFragment();
-      const names = document.createElement('div'); names.className='names';
-      names.textContent = (c.staff||[]).map(s=>s.name).join(' • ') || '';
-      const meta = document.createElement('div'); meta.className='meta';
-      meta.textContent = (c.staff||[]).map(s=>s.location).filter(Boolean)[0] || '';
-      const skills = document.createElement('div'); skills.className='skills';
-      skills.textContent = (c.skills||[]).join(', ');
-      frag.appendChild(names); frag.appendChild(meta); frag.appendChild(skills);
-      return frag;
-    }
+  function formatHour(h24){
+    const ampm = h24>=12 ? 'PM' : 'AM';
+    const h = ((h24+11)%12)+1;
+    return `${h}:00 ${ampm}`;
+  }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-    function updateHighlight() {
-      // Desktop grid
-      document.querySelectorAll('#cal .cell:not(.header):not(.time)').forEach(el => {
-        if (!selectedSkill){ el.classList.remove('match','dim'); return; }
-        const list = (el.dataset.skills||'').split('|').filter(Boolean);
-        const matched = list.includes(selectedSkill);
-        el.classList.toggle('match', matched);
-        el.classList.toggle('dim', !matched);
-      });
-      // Mobile list
-      document.querySelectorAll('#mob .slot').forEach(slot => {
-        if (!selectedSkill){ slot.style.opacity='1'; slot.style.outline='none'; return; }
-        const skillsEl = slot.querySelector('.skills');
-        const list = skillsEl ? skillsEl.textContent.split(',').map(s=>s.trim()) : [];
-        const matched = list.includes(selectedSkill);
-        slot.style.opacity = matched ? '1' : getComputedStyle(document.documentElement).getPropertyValue('--dim') || '0.35';
-        slot.style.outline = matched ? '2px solid var(--accent)' : 'none';
-      });
-    }
-
-    // Boot
-    (function init(){
-      setLoading(true);
-      setButtonsDisabled(true);
-      setWeek(INIT_OFFSET);
-    })();
-  </script>
+  renderChips();
+  renderGrid();
+})();
+</script>
 </body>
 </html>
