@@ -24,6 +24,7 @@
       --t:400ms;           /* transitions */
       --e:ease;
       --hour:48px;         /* 1 hour height */
+      --rows:8;            /* JS updates this to (end-start) */
       --minor:#00000010;   /* half-hour line */
       --timew:100px;       /* time column width (desktop) */
       --dayMin: 1fr;       /* desktop: auto-fit */
@@ -36,7 +37,7 @@
     }
     .wrap{max-width:1100px;margin:24px auto;padding:0;} /* full width inside content */
 
-    /* Header */
+    /* Header card */
     .header-card{
       background:var(--card);
       border:1px solid var(--edge);
@@ -82,7 +83,7 @@
       border:1px solid var(--edge);
       border-radius:20px;
       box-shadow:0 10px 24px rgba(0,0,0,.06);
-      overflow:hidden;               /* desktop: clip; mobile: we flip to scroll */
+      overflow:hidden;
     }
     .cal-head{
       display:grid;
@@ -97,6 +98,7 @@
     .cal-body{
       display:grid;
       grid-template-columns:var(--timew) repeat(5, var(--dayMin));
+      height: calc(var(--hour) * var(--rows));  /* fixed calendar height */
       min-width:100%;
     }
 
@@ -104,13 +106,14 @@
     .timecol{
       position:relative;border-right:1px solid var(--edge);
       background:var(--card);
+      height:100%;
     }
     .tlab{
       position:absolute; right:8px; line-height:1; font-weight:600; color:#263042;
       text-align:right; transform:translateY(-6px); transition:transform var(--t) var(--e);
     }
-    .tlab.first{ transform:translateY(6px); }
-    .tlab.last{  transform:translateY(-14px); }
+    .tlab.first{ transform:translateY(8px); }
+    .tlab.last{  transform:translateY(-16px); }
 
     /* Day columns with hour & half-hour guides */
     .daycol{
@@ -120,6 +123,7 @@
           transparent 0, transparent calc(var(--hour) - 1px), var(--edge) calc(var(--hour) - 1px), var(--edge) var(--hour)),
         repeating-linear-gradient(to bottom,
           transparent 0, transparent calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2));
+      height:100%;
     }
 
     /* Event blocks (merged per-time-range); no rounded corners, pixel-safe layout */
@@ -130,7 +134,7 @@
       padding:6px 8px;
       background:rgba(2,132,199,.06);
       color:#0b1220;
-      box-shadow:inset 0 0 0 1px #cfe9ef;
+      box-shadow:inset 0 0 0 1px #cfe9ef;  /* outline */
       transition:background-color var(--t) var(--e),box-shadow var(--t) var(--e),opacity var(--t) var(--e),filter var(--t) var(--e),top var(--t) var(--e),height var(--t) var(--e),z-index var(--t) var(--e);
       overflow:hidden;
     }
@@ -148,10 +152,9 @@
     @media (max-width: 767px){
       :root{
         --timew:56px;         /* thinner time column */
-        --hour:44px;          /* slightly tighter rows */
+        --hour:44px;          /* tighter rows */
         --dayMin: 220px;      /* each day at least 220px */
       }
-      /* Let the calendar scroll horizontally as one unit so head/body stay aligned */
       .cal{ overflow-x:auto; overflow-y:hidden; }
       .cal-head, .cal-body{
         grid-template-columns: var(--timew) repeat(5, minmax(var(--dayMin), 1fr));
@@ -203,11 +206,14 @@
     btnNext: document.getElementById('btnNext')
   };
 
+  // Config
   const HOURS = { start: 9, end: 17 };                 // 9–5
+  document.documentElement.style.setProperty('--rows', (HOURS.end - HOURS.start)); // keep CSS height in sync
   const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri'];  // Mon–Fri
   let weekOffsetDays = 0;
   let selectedSkill = '';
 
+  // TZ helpers
   const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
   function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
@@ -293,6 +299,7 @@
     els.wrap.classList.toggle('filtered', !!selectedSkill);
     updateEventHits();
 
+    // Resize iframe if embedded
     try{
       const h = document.documentElement.scrollHeight;
       parent && parent.postMessage({type:'machines-grid-height', height:h}, '*');
@@ -300,7 +307,7 @@
   }
 
   function buildTimeCol(){
-    // hour labels aligned to top line; first/last nudged inside
+    // Hour labels aligned to top line; first/last nudged inside
     const labels = [];
     for(let h=HOURS.start; h<=HOURS.end; h++){
       const top = (h - HOURS.start) * 100 / (HOURS.end - HOURS.start);
@@ -319,7 +326,7 @@
     const hourPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hour')) || 48;
     const totalPx = hourPx * (HOURS.end - HOURS.start);
 
-    // 1) boundaries from all people (clamped)
+    // 1) Collect boundaries (clamped)
     const bounds = new Set();
     for(const name in PERSON_DAY){
       const segs = (PERSON_DAY[name]||{})[key] || [];
@@ -332,11 +339,11 @@
     if (bounds.size === 0) return `<div class="daycol"></div>`;
     const pts = Array.from(bounds).sort((a,b)=>a-b);
 
-    // 2) piecewise-constant coverage over [pt[i],pt[i+1))
+    // 2) Piecewise-constant coverage
     const slices = [];
     for(let i=0; i<pts.length-1; i++){
       const a = pts[i], b = pts[i+1];
-      if (b - a < 10) continue; // ignore <10min blips
+      if (b - a < 10) continue; // ignore <10 min blips
       const names = [];
       for(const name in PERSON_DAY){
         const segs = (PERSON_DAY[name]||{})[key] || [];
@@ -353,7 +360,7 @@
       }
     }
 
-    // 3) render full-width blocks; enforce no visual overlap (snap to px with guard)
+    // 3) Render full-width blocks; snap to px with guard to avoid overlap
     let prevBottom = 0; // px from top of day column
     const blocks = slices.map((sl, idx)=>{
       const startRel = sl.start - windowStart;
