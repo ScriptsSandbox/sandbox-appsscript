@@ -21,10 +21,12 @@
       --accent:#00C6D7;
       --hitA:rgba(0,198,215,.12);
 
-      --t:400ms;           /* transition */
+      --t:400ms;           /* transitions */
       --e:ease;
       --hour:48px;         /* 1 hour height */
       --minor:#00000010;   /* half-hour line */
+      --timew:100px;       /* time column width (desktop) */
+      --dayMin: 1fr;       /* desktop: auto-fit */
     }
 
     html,body{
@@ -32,7 +34,7 @@
       background:var(--page); color:var(--text);
       font:12px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-    .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
+    .wrap{max-width:1100px;margin:24px auto;padding:0;} /* full width inside content */
 
     /* Header */
     .header-card{
@@ -80,35 +82,35 @@
       border:1px solid var(--edge);
       border-radius:20px;
       box-shadow:0 10px 24px rgba(0,0,0,.06);
-      overflow:hidden;
+      overflow:hidden;               /* desktop: clip; mobile: we flip to scroll */
     }
     .cal-head{
       display:grid;
-      grid-template-columns:100px repeat(5,1fr); /* time + Mon-Fri */
+      grid-template-columns:var(--timew) repeat(5, var(--dayMin));
       align-items:stretch;
       border-bottom:1px solid var(--edge);
       background:#f3f4f6;
+      min-width:100%;
     }
     .cal-head .timecol{border-right:1px solid var(--edge)}
     .cal-head .day{padding:10px;border-right:1px solid var(--edge);font-weight:700;color:#0f172a}
     .cal-body{
       display:grid;
-      grid-template-columns:100px repeat(5,1fr);
-      min-height:calc(var(--hour) * 8); /* 9–5 */
+      grid-template-columns:var(--timew) repeat(5, var(--dayMin));
+      min-width:100%;
     }
 
     /* Time column: right-justified labels; no grid lines behind */
     .timecol{
       position:relative;border-right:1px solid var(--edge);
-      background:var(--card); /* remove hour lines behind text */
+      background:var(--card);
     }
     .tlab{
       position:absolute; right:8px; line-height:1; font-weight:600; color:#263042;
-      text-align:right;
-      transform:translateY(-6px); transition:transform var(--t) var(--e);
+      text-align:right; transform:translateY(-6px); transition:transform var(--t) var(--e);
     }
-    .tlab.first{ transform:translateY(6px); }     /* push down from top border */
-    .tlab.last{  transform:translateY(-14px); }   /* pull up from bottom border */
+    .tlab.first{ transform:translateY(6px); }
+    .tlab.last{  transform:translateY(-14px); }
 
     /* Day columns with hour & half-hour guides */
     .daycol{
@@ -120,11 +122,11 @@
           transparent 0, transparent calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2));
     }
 
-    /* Event blocks (merged per-time-range); no rounded corners, no overlap */
+    /* Event blocks (merged per-time-range); no rounded corners, pixel-safe layout */
     .event{
       position:absolute; left:6px; right:6px;
       border-radius:0;
-      box-sizing:border-box;             /* use inset outline, no true border */
+      box-sizing:border-box;
       padding:6px 8px;
       background:rgba(2,132,199,.06);
       color:#0b1220;
@@ -132,11 +134,7 @@
       transition:background-color var(--t) var(--e),box-shadow var(--t) var(--e),opacity var(--t) var(--e),filter var(--t) var(--e),top var(--t) var(--e),height var(--t) var(--e),z-index var(--t) var(--e);
       overflow:hidden;
     }
-    /* On skill hit: outline & name highlight only */
-    .event.hit{
-      background:rgba(2,132,199,.06); /* keep base */
-      box-shadow:inset 0 0 0 2px var(--accent);
-    }
+    .event.hit{ box-shadow:inset 0 0 0 2px var(--accent); }
     .ename{font-weight:600;margin-bottom:2px}
     .ename .staff{color:inherit; transition:color var(--t) var(--e)}
     .ename .staff.on{color:var(--accent)}
@@ -146,9 +144,21 @@
     .filtered .event{opacity:.78; filter:grayscale(10%)}
     .filtered .event.hit{opacity:1; filter:none}
 
-    @media (max-width: 760px){
-      .cal-head{grid-template-columns:60px repeat(5,1fr)}
-      .cal-body{grid-template-columns:60px repeat(5,1fr)}
+    /* ---------- Mobile (≤ 767px): horizontal scroll calendar ---------- */
+    @media (max-width: 767px){
+      :root{
+        --timew:56px;         /* thinner time column */
+        --hour:44px;          /* slightly tighter rows */
+        --dayMin: 220px;      /* each day at least 220px */
+      }
+      /* Let the calendar scroll horizontally as one unit so head/body stay aligned */
+      .cal{ overflow-x:auto; overflow-y:hidden; }
+      .cal-head, .cal-body{
+        grid-template-columns: var(--timew) repeat(5, minmax(var(--dayMin), 1fr));
+        min-width: calc(var(--timew) + 5 * var(--dayMin));
+      }
+      .chips .chip{ padding:5px 9px; font-size:11px; }
+      .seg button{ padding:6px 10px; }
     }
   </style>
 </head>
@@ -193,13 +203,11 @@
     btnNext: document.getElementById('btnNext')
   };
 
-  // Config
   const HOURS = { start: 9, end: 17 };                 // 9–5
   const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri'];  // Mon–Fri
   let weekOffsetDays = 0;
   let selectedSkill = '';
 
-  // TZ helpers
   const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
   function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
@@ -345,34 +353,28 @@
       }
     }
 
-    // 3) render full-width blocks; enforce no visual overlap (snap to integers with guard)
+    // 3) render full-width blocks; enforce no visual overlap (snap to px with guard)
     let prevBottom = 0; // px from top of day column
     const blocks = slices.map((sl, idx)=>{
       const startRel = sl.start - windowStart;
       const endRel   = sl.end   - windowStart;
 
-      // raw positions (subpixel allowed)
       let topPxRaw = (startRel / total) * totalPx;
       let bottomPxRaw = (endRel / total) * totalPx;
 
-      // snap to integers and enforce monotonic positioning
       let topPx = Math.max(Math.round(topPxRaw), prevBottom);
       let heightPx = Math.round(bottomPxRaw) - topPx;
-      // ensure visible & non-overlapping
       if (heightPx < 1) { heightPx = 1; }
       prevBottom = topPx + heightPx;
 
       const namesStr = sl.names.join(' + ');
       const timeLabel = fmtTime(startRel + windowStart) + '–' + fmtTime(endRel + windowStart);
 
-      // build per-name spans so we can highlight only matching staff
       const namesHtml = sl.names
         .map(n => `<span class="staff" data-name="${escAttr(n)}">${esc(n)}</span>`)
         .join(' + ');
 
       const nameList = sl.names.join(',');
-
-      // z-index: later blocks above earlier
       const z = 10 + idx;
 
       return `<div class="event"
