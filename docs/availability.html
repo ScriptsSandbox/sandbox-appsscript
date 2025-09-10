@@ -24,14 +24,14 @@
       --coverA: rgba(0,0,0,.04);     /* any coverage */
       --hitA:   rgba(0,198,215,.22); /* selected-skill match */
 
-      --t: 300ms;                    /* transition duration */
+      --t: 400ms;                    /* transition duration */
       --e: ease;                     /* transition easing */
     }
 
     html,body{
       margin:0; padding:0;
       background:var(--page); color:var(--text);
-      font:14px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font:12px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; /* smaller */
     }
     .wrap{max-width:1100px;margin:24px auto;padding:0 16px}
 
@@ -41,12 +41,12 @@
       border:1px solid var(--edge);
       border-radius:20px;
       box-shadow:0 8px 20px rgba(0,0,0,.06);
-      padding:14px 16px;
+      padding:12px 14px;
       display:flex; align-items:center; gap:12px;
-      margin-bottom:14px;
+      margin-bottom:12px;
     }
-    .header-text h1{font-size:1.2rem; margin:0 0 2px 0; font-weight:700}
-    .sub{color:var(--muted); font-size:.93rem}
+    .header-text h1{font-size:1rem; margin:0 0 2px 0; font-weight:700}
+    .sub{color:var(--muted); font-size:.9rem}
 
     /* Controls row */
     .controls{
@@ -54,17 +54,17 @@
       border:1px solid var(--edge);
       border-radius:16px;
       box-shadow:0 8px 20px rgba(0,0,0,.04);
-      padding:10px 12px;
-      display:flex; flex-wrap:wrap; gap:10px; align-items:center;
-      margin-bottom:12px;
+      padding:8px 10px;
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+      margin-bottom:10px;
     }
     .seg{
       display:inline-flex; gap:6px; background:#fff; border:1px solid var(--edge);
-      border-radius:999px; padding:4px;
+      border-radius:999px; padding:3px;
     }
     .seg button{
       appearance:none; border:0; background:transparent; color:var(--text);
-      padding:8px 14px; border-radius:999px; cursor:pointer; font-weight:600;
+      padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:600;
       transition: background-color var(--t) var(--e), color var(--t) var(--e), box-shadow var(--t) var(--e);
     }
     .seg button.active{
@@ -72,10 +72,10 @@
       box-shadow:0 0 0 2px var(--accent) inset;
     }
 
-    .chips{display:flex; flex-wrap:wrap; gap:8px}
+    .chips{display:flex; flex-wrap:wrap; gap:6px}
     .chip{
       appearance:none; border:1px solid var(--edge); background:#fff; color:#0b1220;
-      padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:400; /* non-bold */
+      padding:6px 10px; border-radius:999px; cursor:pointer; font-weight:400; /* non-bold */
       box-shadow:0 1px 0 rgba(0,0,0,.02);
       transition: background-color var(--t) var(--e), color var(--t) var(--e), box-shadow var(--t) var(--e);
     }
@@ -96,13 +96,13 @@
     }
     .grid thead th{
       background:#f3f4f6; color:#0f172a; font-weight:700; text-align:left;
-      padding:12px 12px; border-bottom:1px solid var(--edge);
+      padding:10px; border-bottom:1px solid var(--edge);
       transition: color var(--t) var(--e), background-color var(--t) var(--e), opacity var(--t) var(--e), filter var(--t) var(--e);
     }
     .grid th, .grid td{border-right:1px solid var(--edge)}
     .grid th:last-child, .grid td:last-child{border-right:0}
-    .time{white-space:nowrap; width:120px; font-weight:600; color:#263042}
-    .grid tbody td{height:56px; padding:6px 10px}
+    .time{white-space:nowrap; width:100px; font-weight:600; color:#263042}
+    .grid tbody td{height:48px; padding:6px 8px}
 
     /* cells */
     .cell{
@@ -112,7 +112,7 @@
     }
     .cell.cover{background:var(--coverA)}
     .cell.hit{background:var(--hitA); outline:2px solid var(--accent); outline-offset:-2px}
-    .names{font-weight:400; letter-spacing:.15px} /* non-bold */
+    .names{font-weight:400; letter-spacing:.1px} /* non-bold */
 
     /* When a filter is active, softly de-emphasize non-hit cells */
     .filtered .grid td.cell{ opacity:.78; filter: grayscale(10%); }
@@ -223,7 +223,7 @@
       btn.addEventListener('click', ()=>{
         selectedSkill = btn.dataset.skill || '';
         els.wrap.classList.toggle('filtered', !!selectedSkill); // dim non-hit cells
-        applyFilterStyles();  // <-- only toggle classes, no re-render (so transitions animate)
+        applyFilterStyles();  // toggle classes in-place for smooth transitions
         // refresh chip states
         els.chips.querySelectorAll('.chip').forEach(b=>{
           const isReset = b.dataset.skill==="";
@@ -267,7 +267,6 @@
           return segs.some(([a,b]) => (a<slotEnd && b>slotStart));
         });
 
-        // Precompute union skills for the cell and store in dataset so we can toggle "hit" without re-render
         const skillSet = Array.from(new Set(peopleInSlot.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
         const hasCover = peopleInSlot.length>0;
         const names = peopleInSlot.map(p=>p.name).join(' • ');
@@ -285,7 +284,6 @@
     }
     els.gridBody.innerHTML = rows.join('');
 
-    // Apply current filter state (adds/removes .hit with animation)
     els.wrap.classList.toggle('filtered', !!selectedSkill);
     applyFilterStyles();
 
@@ -303,7 +301,7 @@
       const skills = (td.dataset.skills || '').split('|').filter(Boolean);
       const hasHit = selectedSkill ? skills.includes(selectedSkill) : false;
       td.classList.toggle('hit', hasHit);
-      td.classList.toggle('cover', hasCover); // keep cover if any coverage
+      td.classList.toggle('cover', hasCover);
     });
   }
 
