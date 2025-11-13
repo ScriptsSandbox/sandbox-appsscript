@@ -18,7 +18,7 @@
       --muted:#5b6573;
       --edge:#e5e7eb;
 
-      --accent:#00C6D7;
+      --accent:#00C6D7;    /* highlight color */
       --hitA:rgba(0,198,215,.12);
 
       --t:400ms;           /* transitions */
@@ -37,7 +37,7 @@
     }
     .wrap{max-width:1100px;margin:24px auto;padding:0;} /* full width inside content */
 
-    /* Header card */
+    /* Header */
     .header-card{
       background:var(--card);
       border:1px solid var(--edge);
@@ -131,7 +131,7 @@
       position:absolute; left:6px; right:6px;
       border-radius:0;
       box-sizing:border-box;
-      padding:6px 8px;
+      padding:6px 8px 4px;
       background:rgba(2,132,199,.06);
       color:#0b1220;
       box-shadow:inset 0 0 0 1px #cfe9ef;  /* outline */
@@ -139,9 +139,19 @@
       overflow:hidden;
     }
     .event.hit{ box-shadow:inset 0 0 0 2px var(--accent); }
-    .ename{font-weight:600;margin-bottom:2px}
-    .ename .staff{color:inherit; transition:color var(--t) var(--e)}
-    .ename .staff.on{color:var(--accent)}
+    .ename{margin-bottom:4px; display:flex; gap:6px; flex-wrap:wrap}
+
+    /* name chips inside events */
+    .namechip{
+      display:inline-block; padding:3px 8px; border-radius:999px;
+      background:#fff; border:1px solid var(--edge); color:#0b1220;
+      font-weight:600;
+      transition:color var(--t) var(--e), border-color var(--t) var(--e), background-color var(--t) var(--e);
+    }
+    .namechip.on{
+      color:#06262A; background:var(--hitA); border-color:var(--accent);
+    }
+
     .etime{color:var(--muted)}
 
     /* Dim non-matching events when filtered */
@@ -374,12 +384,12 @@
       if (heightPx < 1) { heightPx = 1; }
       prevBottom = topPx + heightPx;
 
-      const namesStr = sl.names.join(' + ');
       const timeLabel = fmtTime(startRel + windowStart) + '–' + fmtTime(endRel + windowStart);
 
-      const namesHtml = sl.names
-        .map(n => `<span class="staff" data-name="${escAttr(n)}">${esc(n)}</span>`)
-        .join(' + ');
+      // chips for names (so we can highlight matching staff only)
+      const chips = sl.names
+        .map(n => `<span class="namechip" data-name="${escAttr(n)}">${esc(n)}</span>`)
+        .join('');
 
       const nameList = sl.names.join(',');
       const z = 10 + idx;
@@ -387,8 +397,8 @@
       return `<div class="event"
                    data-names="${escAttr(nameList)}"
                    style="top:${topPx}px; height:${heightPx}px; z-index:${z};"
-                   title="${esc(namesStr)} • ${esc(timeLabel)}">
-                <div class="ename">${namesHtml}</div>
+                   title="${esc(sl.names.join(' + '))} • ${esc(timeLabel)}">
+                <div class="ename">${chips}</div>
                 <div class="etime">${esc(timeLabel)}</div>
               </div>`;
     }).join('');
@@ -401,14 +411,14 @@
     events.forEach(e=>{
       const names = (e.dataset.names || '').split(',').filter(Boolean);
       let any = false;
-      e.querySelectorAll('.staff').forEach(span=>{
+      e.querySelectorAll('.namechip').forEach(span=>{
         const nm = span.dataset.name || '';
         const skills = (SKILLS_BY_NAME[nm] || []);
         const on = selectedSkill ? skills.includes(selectedSkill) : false;
         span.classList.toggle('on', on);
         any = any || on;
       });
-      e.classList.toggle('hit', selectedSkill && any);
+      e.classList.toggle('hit', selectedSkill && any); // outline only
     });
   }
 
