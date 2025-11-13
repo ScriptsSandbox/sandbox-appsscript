@@ -12,307 +12,200 @@
 
   <style>
     :root{
-      --page:#747678;
-      --card:#ffffff;
+      --page:#747678;      /* page bg */
+      --card:#ffffff;      /* card bg */
       --text:#14181f;
       --muted:#5b6573;
       --edge:#e5e7eb;
 
-      --accent:#00C6D7;
+      --accent:#00C6D7;    /* highlight color */
       --hitA:rgba(0,198,215,.12);
 
-      --t:400ms;
+      --t:400ms;           /* transitions */
       --e:ease;
-
-      --hour:48px;        /* height of an hour row */
-      --rows:8;           /* JS updates based on HOURS */
-      --minor:#00000010;  /* half-hour lines */
-
-      --timew:100px;      /* time column width (desktop) */
-      --dayMin:1fr;       /* flexible columns desktop */
+      --hour:48px;         /* 1 hour height */
+      --rows:8;            /* JS updates this to (end-start) */
+      --minor:#00000010;   /* half-hour line */
+      --timew:100px;       /* time column width (desktop) */
+      --dayMin: 1fr;       /* desktop: auto-fit */
     }
 
     html,body{
       margin:0; padding:0;
-      background:var(--page);
-      color:var(--text);
+      background:var(--page); color:var(--text);
       font:12px/1.45 Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-    .wrap{
-      max-width:1100px;
-      margin:24px auto;
-      padding:0;
-    }
+    .wrap{max-width:1100px;margin:24px auto;padding:0;} /* full width inside content */
 
-    /* ---------------- Header ---------------- */
+    /* Header */
     .header-card{
       background:var(--card);
       border:1px solid var(--edge);
       border-radius:20px;
+      box-shadow:0 8px 20px rgba(0,0,0,.06);
       padding:12px 14px;
       margin-bottom:12px;
-      box-shadow:0 8px 20px rgba(0,0,0,.06);
     }
-    .header-text h1{
-      font-size:1rem;
-      margin:0 0 2px;
-      font-weight:700;
-    }
-    .sub{
-      color:var(--muted);
-      font-size:.9rem;
-    }
+    .header-text h1{font-size:1rem;margin:0 0 2px 0;font-weight:700}
+    .sub{color:var(--muted);font-size:.9rem}
 
-    /* ---------------- Controls ---------------- */
+    /* Controls */
     .controls{
       background:var(--card);
       border:1px solid var(--edge);
       border-radius:16px;
-      padding:8px 10px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      align-items:center;
-      margin-bottom:10px;
       box-shadow:0 8px 20px rgba(0,0,0,.04);
+      padding:8px 10px;
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+      margin-bottom:10px;
     }
-    .seg{
-      display:inline-flex;
-      gap:6px;
-      background:#fff;
-      border:1px solid var(--edge);
-      border-radius:999px;
-      padding:3px;
-    }
+    .seg{display:inline-flex;gap:6px;background:#fff;border:1px solid var(--edge);border-radius:999px;padding:3px}
     .seg button{
-      appearance:none;
-      border:0;
-      background:transparent;
-      color:var(--text);
-      padding:6px 10px;
-      border-radius:999px;
-      cursor:pointer;
-      font-weight:600;
-      transition:background-color var(--t) var(--e),color var(--t) var(--e);
+      appearance:none;border:0;background:transparent;color:var(--text);
+      padding:6px 10px;border-radius:999px;cursor:pointer;font-weight:600;
+      transition:background-color var(--t) var(--e),color var(--t) var(--e),box-shadow var(--t) var(--e);
     }
-    .seg button.active{
-      background:var(--accent);
-      color:#042226;
-      box-shadow:0 0 0 2px var(--accent) inset;
-    }
+    .seg button.active{background:var(--accent);color:#042226;box-shadow:0 0 0 2px var(--accent) inset}
 
-    .chips{
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-    }
+    .chips{display:flex;flex-wrap:wrap;gap:6px}
     .chip{
-      appearance:none;
-      border:1px solid var(--edge);
-      background:#fff;
-      color:#0b1220;
-      padding:6px 10px;
-      border-radius:999px;
-      cursor:pointer;
-      font-weight:400;
+      appearance:none;border:1px solid var(--edge);background:#fff;color:#0b1220;
+      padding:6px 10px;border-radius:999px;cursor:pointer;font-weight:400;
       box-shadow:0 1px 0 rgba(0,0,0,.02);
-      transition:background-color var(--t),color var(--t);
+      transition:background-color var(--t) var(--e),color var(--t) var(--e),box-shadow var(--t) var(--e);
     }
-    .chip.reset{ color:var(--muted); }
-    .chip.active{
-      background:var(--accent);
-      color:#06262A;
-      border-color:transparent;
-      box-shadow:0 0 0 2px var(--accent) inset;
-    }
+    .chip.reset{color:var(--muted)}
+    .chip.active{background:var(--accent);color:#06262A;border-color:transparent;box-shadow:0 0 0 2px var(--accent) inset}
 
-    /* ---------------- Calendar ---------------- */
+    /* Calendar shell */
     .cal{
       background:var(--card);
       border:1px solid var(--edge);
       border-radius:20px;
-      overflow:hidden;
       box-shadow:0 10px 24px rgba(0,0,0,.06);
+      overflow:hidden;
     }
-
-    /* HEADER GRID */
     .cal-head{
       display:grid;
-      grid-template-columns:var(--timew) repeat(5,var(--dayMin));
+      grid-template-columns:var(--timew) repeat(5, var(--dayMin));
+      align-items:stretch;
       border-bottom:1px solid var(--edge);
       background:#f3f4f6;
       min-width:100%;
     }
-    .cal-head .timecol{
-      border-right:1px solid var(--edge);
-    }
-    .cal-head .day{
-      padding:10px;
-      font-weight:700;
-      color:#0f172a;
-      border-right:1px solid var(--edge);
-    }
-
-    /* BODY GRID */
+    .cal-head .timecol{border-right:1px solid var(--edge)}
+    .cal-head .day{padding:10px;border-right:1px solid var(--edge);font-weight:700;color:#0f172a}
     .cal-body{
       display:grid;
-      grid-template-columns:var(--timew) repeat(5,var(--dayMin));
-      height:calc(var(--hour) * var(--rows));
+      grid-template-columns:var(--timew) repeat(5, var(--dayMin));
+      height: calc(var(--hour) * var(--rows));  /* fixed calendar height */
       min-width:100%;
     }
 
-    /* TIME COLUMN */
+    /* Time column: right-justified labels; no grid lines behind */
     .timecol{
-      position:relative;
-      border-right:1px solid var(--edge);
+      position:relative;border-right:1px solid var(--edge);
       background:var(--card);
       height:100%;
     }
     .tlab{
-      position:absolute;
-      right:8px;
-      line-height:1;
-      font-weight:600;
-      color:#263042;
-      text-align:right;
-      transform:translateY(-6px);
-      transition:transform var(--t);
+      position:absolute; right:8px; line-height:1; font-weight:600; color:#263042;
+      text-align:right; transform:translateY(-6px); transition:transform var(--t) var(--e);
     }
     .tlab.first{ transform:translateY(8px); }
     .tlab.last{  transform:translateY(-16px); }
 
-    /* DAY COLUMNS */
+    /* Day columns with hour & half-hour guides */
     .daycol{
-      position:relative;
-      border-right:1px solid var(--edge);
-      height:100%;
+      position:relative; border-right:1px solid var(--edge);
       background:
         repeating-linear-gradient(to bottom,
-          transparent 0,
-          transparent calc(var(--hour) - 1px),
-          var(--edge) calc(var(--hour) - 1px),
-          var(--edge) var(--hour)),
+          transparent 0, transparent calc(var(--hour) - 1px), var(--edge) calc(var(--hour) - 1px), var(--edge) var(--hour)),
         repeating-linear-gradient(to bottom,
-          transparent 0,
-          transparent calc(var(--hour)/2 - 1px),
-          var(--minor) calc(var(--hour)/2 - 1px),
-          var(--minor) calc(var(--hour)/2));
+          transparent 0, transparent calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2 - 1px), var(--minor) calc(var(--hour)/2));
+      height:100%;
     }
 
-    /* EVENT BLOCKS */
+    /* Event blocks (merged per-time-range); no rounded corners, pixel-safe layout */
     .event{
-      position:absolute;
-      left:6px;
-      right:6px;
+      position:absolute; left:6px; right:6px;
       border-radius:0;
       box-sizing:border-box;
-      padding:4px 6px 2px;   /* tighter for chip fit */
+      padding:6px 8px 4px;
       background:rgba(2,132,199,.06);
       color:#0b1220;
+      box-shadow:inset 0 0 0 1px #cfe9ef;  /* outline */
+      transition:background-color var(--t) var(--e),box-shadow var(--t) var(--e),opacity var(--t) var(--e),filter var(--t) var(--e),top var(--t) var(--e),height var(--t) var(--e),z-index var(--t) var(--e);
       overflow:hidden;
-      box-shadow:inset 0 0 0 1px #cfe9ef;
-      transition:box-shadow var(--t),top var(--t),height var(--t),opacity var(--t),filter var(--t);
     }
-    .event.hit{
-      box-shadow:inset 0 0 0 2px var(--accent);
-    }
+    .event.hit{ box-shadow:inset 0 0 0 2px var(--accent); }
+    .ename{margin-bottom:4px; display:flex; gap:6px; flex-wrap:wrap}
 
-    /* NAME CHIPS INSIDE EVENTS */
-    .ename{
-      margin-bottom:2px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:4px;
-      max-height:32px;             /* ~2 lines */
-      overflow:hidden;
-      -webkit-mask-image:linear-gradient(to bottom,black 70%,transparent);
-      mask-image:linear-gradient(to bottom,black 70%,transparent);
-    }
+    /* name chips inside events */
     .namechip{
-      display:inline-block;
-      padding:2px 6px;
-      border-radius:999px;
-      background:#fff;
-      border:1px solid var(--edge);
-      color:#0b1220;
+      display:inline-block; padding:3px 8px; border-radius:999px;
+      background:#fff; border:1px solid var(--edge); color:#0b1220;
       font-weight:600;
-      font-size:11px;
-      white-space:nowrap;
-      transition:color var(--t),border-color var(--t),background-color var(--t);
+      transition:color var(--t) var(--e), border-color var(--t) var(--e), background-color var(--t) var(--e);
     }
     .namechip.on{
-      color:#06262A;
-      background:var(--hitA);
-      border-color:var(--accent);
+      color:#06262A; background:var(--hitA); border-color:var(--accent);
     }
 
-    .etime{
-      color:var(--muted);
-      font-size:11px;
-      line-height:1.2;
-    }
+    .etime{color:var(--muted)}
 
-    /* FILTER DIMMING */
-    .filtered .event{ opacity:.78; filter:grayscale(10%); }
-    .filtered .event.hit{ opacity:1; filter:none; }
+    /* Dim non-matching events when filtered */
+    .filtered .event{opacity:.78; filter:grayscale(10%)}
+    .filtered .event.hit{opacity:1; filter:none}
 
-    /* ---------------- MOBILE ---------------- */
-    @media (max-width:767px){
+    /* ---------- Mobile (≤ 767px): horizontal scroll calendar ---------- */
+    @media (max-width: 767px){
       :root{
-        --timew:56px;
-        --hour:44px;
-        --dayMin:220px;
+        --timew:56px;         /* thinner time column */
+        --hour:44px;          /* tighter rows */
+        --dayMin: 220px;      /* each day at least 220px */
       }
-      .cal{
-        overflow-x:auto;
-        overflow-y:hidden;
+      .cal{ overflow-x:auto; overflow-y:hidden; }
+      .cal-head, .cal-body{
+        grid-template-columns: var(--timew) repeat(5, minmax(var(--dayMin), 1fr));
+        min-width: calc(var(--timew) + 5 * var(--dayMin));
       }
-      .cal-head,.cal-body{
-        grid-template-columns:var(--timew) repeat(5,minmax(var(--dayMin),1fr));
-        min-width:calc(var(--timew) + 5*var(--dayMin));
-      }
-      .chips .chip{ padding:5px 9px;font-size:11px; }
+      .chips .chip{ padding:5px 9px; font-size:11px; }
       .seg button{ padding:6px 10px; }
     }
   </style>
 </head>
-
 <body>
-<div class="wrap" id="wrap">
+  <div class="wrap" id="wrap">
+    <div class="header-card">
+      <div class="header-text">
+        <h1>Sandbox Staff — Weekly Schedule</h1>
+        <div class="sub">See who’s on this week. Choose a skill to highlight matching coverage, or switch to Next Week to plan ahead.</div>
+      </div>
+    </div>
 
-  <!-- Header -->
-  <div class="header-card">
-    <div class="header-text">
-      <h1>Sandbox Staff — Weekly Schedule</h1>
-      <div class="sub">See who’s on this week. Choose a skill to highlight matching coverage, or switch to Next Week to plan ahead.</div>
+    <div class="controls">
+      <div class="seg" role="tablist" aria-label="Week switch">
+        <button id="btnThis" class="active" role="tab" aria-selected="true">This Week</button>
+        <button id="btnNext" class="" role="tab" aria-selected="false">Next Week</button>
+      </div>
+      <div class="chips" id="skillChips"></div>
+    </div>
+
+    <div class="cal">
+      <div class="cal-head" id="calHead"></div>
+      <div class="cal-body" id="calBody"></div>
     </div>
   </div>
-
-  <!-- Controls -->
-  <div class="controls">
-    <div class="seg" role="tablist">
-      <button id="btnThis" class="active">This Week</button>
-      <button id="btnNext">Next Week</button>
-    </div>
-    <div class="chips" id="skillChips"></div>
-  </div>
-
-  <!-- Calendar -->
-  <div class="cal">
-    <div class="cal-head" id="calHead"></div>
-    <div class="cal-body" id="calBody"></div>
-  </div>
-
-</div>
 
 <script>
 (async function(){
-
-  /* ---------- Load JSON ---------- */
-  const data = await fetch('./data/availability.json',{cache:'no-cache'}).then(r=>r.json());
+  const data = await fetch('./data/availability.json', {cache:'no-cache'}).then(r=>r.json());
   const tz = data.tz || 'America/Los_Angeles';
   const PEOPLE = data.people || [];
-  const ALL_SKILLS = data.skills || [];
+  const ALL_SKILLS = (data.skills && data.skills.length)
+    ? data.skills
+    : Array.from(new Set(PEOPLE.flatMap(p=>p.skills||[]))).sort((a,b)=>a.localeCompare(b));
 
   const els = {
     wrap: document.getElementById('wrap'),
@@ -323,31 +216,27 @@
     btnNext: document.getElementById('btnNext')
   };
 
-  /* ---------- Config ---------- */
-  const HOURS = { start:9, end:17 }; // 9am–5pm
-  document.documentElement.style.setProperty('--rows',(HOURS.end - HOURS.start));
-
-  const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri'];
+  // Config
+  const HOURS = { start: 9, end: 17 };                 // 9–5
+  document.documentElement.style.setProperty('--rows', (HOURS.end - HOURS.start)); // keep CSS height in sync
+  const DAY_LABELS = ['Mon','Tue','Wed','Thu','Fri'];  // Mon–Fri
   let weekOffsetDays = 0;
   let selectedSkill = '';
 
-  /* ---------- Helpers ---------- */
+  // TZ helpers
   const fmt = (d,opts)=> new Intl.DateTimeFormat('en-US',{timeZone:tz,...opts}).format(d);
   const nowTz = new Date(new Date().toLocaleString('en-US',{timeZone:tz}));
-  const mondayOfWeek = d=>{
-    const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day);
-    x.setHours(0,0,0,0); return x;
-  };
-  const addDays = (d,n)=>{ const x=new Date(d); x.setDate(x.getDate()+n); return x; };
-  const minutes = d=> d.getHours()*60 + d.getMinutes();
-  const dayKey = d=> fmt(d,{year:'numeric'})+'-'+fmt(d,{month:'2-digit'})+'-'+fmt(d,{day:'2-digit'});
+  function mondayOfWeek(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
+  function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+  function minutes(d){ return d.getHours()*60 + d.getMinutes(); }
+  function dayKey(d){ return fmt(d,{year:'numeric'}) + '-' + fmt(d,{month:'2-digit'}) + '-' + fmt(d,{day:'2-digit'}); }
 
-  /* ---------- Convert people[] into day segments ---------- */
+  // Build person -> dayKey -> segments [startMin,endMin]
   function buildDaySegments(){
-    const out = {};
+    const byName = {};
     for(const p of PEOPLE){
       const m = {};
-      for(const a of p.available || []){
+      for(const a of (p.available||[])){
         let s=new Date(a.start), e=new Date(a.end);
         let cur = new Date(s);
         while(true){
@@ -355,114 +244,203 @@
           const dayStart = new Date(cur); dayStart.setHours(0,0,0,0);
           const nextDay  = new Date(dayStart); nextDay.setDate(nextDay.getDate()+1);
           const endForDay = (e <= nextDay) ? e : nextDay;
-          if(!m[key]) m[key]=[];
+          if (!m[key]) m[key] = [];
           m[key].push([minutes(s), minutes(endForDay)]);
-          if(e <= nextDay) break;
+          if (e <= nextDay) break;
           cur = nextDay;
         }
       }
-      out[p.name] = m;
+      byName[p.name] = m;
     }
-    return out;
+    return byName;
   }
 
   const PERSON_DAY = buildDaySegments();
-  const SKILLS_BY_NAME = PEOPLE.reduce((map,p)=>{ map[p.name]=p.skills||[]; return map; },{});
+  const SKILLS_BY_NAME = PEOPLE.reduce((acc,p)=>{ acc[p.name]=p.skills||[]; return acc; },{});
 
-  /* ---------- Week Toggle ---------- */
-  els.btnThis.onclick = ()=>{ weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); render(); };
-  els.btnNext.onclick = ()=>{ weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); render(); };
+  // Week toggle
+  els.btnThis.addEventListener('click', ()=>{ weekOffsetDays=0; els.btnThis.classList.add('active'); els.btnNext.classList.remove('active'); render(); });
+  els.btnNext.addEventListener('click', ()=>{ weekOffsetDays=7; els.btnNext.classList.add('active'); els.btnThis.classList.remove('active'); render(); });
 
-  /* ---------- Skill Chips ---------- */
+  // Chips
   function renderChips(){
     const chips = ['Reset filter', ...ALL_SKILLS];
     els.chips.innerHTML = chips.map((s,i)=>{
       const isReset = i===0;
       const active = isReset ? !selectedSkill : (selectedSkill===s);
-      return `<button class="chip ${isReset?'reset':''} ${active?'active':''}" data-skill="${isReset?'':s}" aria-pressed="${active}">${s}</button>`;
+      const cls = ['chip', isReset?'reset':'', active?'active':''].join(' ').trim();
+      return `<button class="${cls}" data-skill="${isReset?'':s}" aria-pressed="${active}">${s}</button>`;
     }).join('');
-
-    els.chips.querySelectorAll('.chip').forEach(btn=>{
-      btn.onclick = ()=>{
-        selectedSkill = btn.dataset.skill || '';
-        els.wrap.classList.toggle('filtered',!!selectedSkill);
-        updateEventHits();
+    els.chips.querySelectorAll('.chip').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        selectedSkill = b.dataset.skill || '';
+        els.wrap.classList.toggle('filtered', !!selectedSkill);
+        updateEventHits();      // animate in place
+        // update chip visuals
         els.chips.querySelectorAll('.chip').forEach(x=>{
-          const isReset = !x.dataset.skill;
+          const isReset = x.dataset.skill==="";
           const active = isReset ? !selectedSkill : (selectedSkill===x.dataset.skill);
-          x.classList.toggle('active',active);
-          x.setAttribute('aria-pressed',String(active));
+          x.classList.toggle('active', active);
+          x.setAttribute('aria-pressed', String(active));
         });
-      };
+      });
     });
   }
 
-  /* ---------- Main Render ---------- */
   function render(){
-    const mon = addDays(mondayOfWeek(nowTz),weekOffsetDays);
+    const mon = addDays(mondayOfWeek(nowTz), weekOffsetDays);
 
-    /* Head row */
+    // Head: time + Mon–Fri
     els.head.innerHTML = [
       `<div class="timecol"></div>`,
-      ...DAY_LABELS.map((label,i)=>{
-        const d=addDays(mon,i);
-        return `<div class="day">${fmt(d,{weekday:'short'})} ${fmt(d,{month:'numeric'})}/${fmt(d,{day:'numeric'})}</div>`;
+      ...DAY_LABELS.map((_,i)=>{
+        const d = addDays(mon, i);
+        const title = fmt(d,{weekday:'short'}) + ' ' + fmt(d,{month:'numeric'}) + '/' + fmt(d,{day:'numeric'});
+        return `<div class="day">${title}</div>`;
       })
     ].join('');
 
-    /* Body */
+    // Body: time col + 5 day columns
     const timeCol = buildTimeCol();
     const dayCols = DAY_LABELS.map((_,i)=> buildDayCol(addDays(mon,i)));
-    els.body.innerHTML = [timeCol,...dayCols].join('');
 
-    els.wrap.classList.toggle('filtered',!!selectedSkill);
+    els.body.innerHTML = [timeCol, ...dayCols].join('');
+
+    els.wrap.classList.toggle('filtered', !!selectedSkill);
     updateEventHits();
 
-    /* Resize iframe if embedded */
+    // Resize iframe if embedded
     try{
-      parent && parent.postMessage({type:'machines-grid-height',height:document.documentElement.scrollHeight},'*');
+      const h = document.documentElement.scrollHeight;
+      parent && parent.postMessage({type:'machines-grid-height', height:h}, '*');
     }catch(e){}
   }
 
-  /* ---------- Time Column ---------- */
   function buildTimeCol(){
-    const labels=[];
+    // Hour labels aligned to top line; first/last nudged inside
+    const labels = [];
     for(let h=HOURS.start; h<=HOURS.end; h++){
-      const top = (h-HOURS.start)*100/(HOURS.end-HOURS.start);
-      const cls = h===HOURS.start ? 'tlab first' : h===HOURS.end ? 'tlab last' : 'tlab';
+      const top = (h - HOURS.start) * 100 / (HOURS.end - HOURS.start);
+      const cls = h===HOURS.start ? 'tlab first' : (h===HOURS.end ? 'tlab last' : 'tlab');
       labels.push(`<div class="${cls}" style="top:${top}%">${formatHour(h)}</div>`);
     }
     return `<div class="timecol">${labels.join('')}</div>`;
   }
 
-  function formatHour(h24){
-    const ampm = h24>=12?'PM':'AM';
-    const h=((h24+11)%12)+1;
-    return `${h} ${ampm}`;
-  }
-
-  function fmtTime(totalMins){
-    let m=totalMins%60;
-    let h24=Math.floor(totalMins/60)%24;
-    const ampm=h24>=12?'PM':'AM';
-    const h=((h24+11)%12)+1;
-    return `${h}${m?':'+String(m).padStart(2,'0'):''} ${ampm}`;
-  }
-
-  /* ---------- Build Day Column ---------- */
+  // Day column with merged blocks by person-set, using pixel-safe layout (no overlap)
   function buildDayCol(d){
     const key = dayKey(d);
-    const windowStart = HOURS.start*60,
-          windowEnd   = HOURS.end*60;
-    const total = windowEnd-windowStart;
+    const windowStart = HOURS.start * 60, windowEnd = HOURS.end * 60;
+    const total = windowEnd - windowStart;
 
-    const hourPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hour'))||48;
-    const totalPx = hourPx*(HOURS.end-HOURS.start);
+    const hourPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hour')) || 48;
+    const totalPx = hourPx * (HOURS.end - HOURS.start);
 
-    /* Boundaries */
-    const bounds=new Set();
+    // 1) Collect boundaries (clamped)
+    const bounds = new Set();
     for(const name in PERSON_DAY){
-      const segs=(PERSON_DAY[name]||{})[key]||[];
-      for(const[s0,e0]of segs){
-        const s=Math.max(windowStart,s0);
-        const e=Math.min(windowEnd,e
+      const segs = (PERSON_DAY[name]||{})[key] || [];
+      for(const [s0,e0] of segs){
+        const s = Math.max(windowStart, s0);
+        const e = Math.min(windowEnd, e0);
+        if (e > s) { bounds.add(s); bounds.add(e); }
+      }
+    }
+    if (bounds.size === 0) return `<div class="daycol"></div>`;
+    const pts = Array.from(bounds).sort((a,b)=>a-b);
+
+    // 2) Piecewise-constant coverage
+    const slices = [];
+    for(let i=0; i<pts.length-1; i++){
+      const a = pts[i], b = pts[i+1];
+      if (b - a < 10) continue; // ignore <10 min blips
+      const names = [];
+      for(const name in PERSON_DAY){
+        const segs = (PERSON_DAY[name]||{})[key] || [];
+        if (segs.some(([s,e]) => s < b && e > a)) names.push(name);
+      }
+      if (names.length){
+        const setKey = names.slice().sort().join('|');
+        const last = slices[slices.length-1];
+        if (last && last.key === setKey && Math.abs(last.end - a) < 0.001){
+          last.end = b;
+        } else {
+          slices.push({start:a, end:b, key:setKey, names:names.slice().sort()});
+        }
+      }
+    }
+
+    // 3) Render full-width blocks; snap to px with guard to avoid overlap
+    let prevBottom = 0; // px from top of day column
+    const blocks = slices.map((sl, idx)=>{
+      const startRel = sl.start - windowStart;
+      const endRel   = sl.end   - windowStart;
+
+      let topPxRaw = (startRel / total) * totalPx;
+      let bottomPxRaw = (endRel / total) * totalPx;
+
+      let topPx = Math.max(Math.round(topPxRaw), prevBottom);
+      let heightPx = Math.round(bottomPxRaw) - topPx;
+      if (heightPx < 1) { heightPx = 1; }
+      prevBottom = topPx + heightPx;
+
+      const timeLabel = fmtTime(startRel + windowStart) + '–' + fmtTime(endRel + windowStart);
+
+      // chips for names (so we can highlight matching staff only)
+      const chips = sl.names
+        .map(n => `<span class="namechip" data-name="${escAttr(n)}">${esc(n)}</span>`)
+        .join('');
+
+      const nameList = sl.names.join(',');
+      const z = 10 + idx;
+
+      return `<div class="event"
+                   data-names="${escAttr(nameList)}"
+                   style="top:${topPx}px; height:${heightPx}px; z-index:${z};"
+                   title="${esc(sl.names.join(' + '))} • ${esc(timeLabel)}">
+                <div class="ename">${chips}</div>
+                <div class="etime">${esc(timeLabel)}</div>
+              </div>`;
+    }).join('');
+
+    return `<div class="daycol">${blocks}</div>`;
+  }
+
+  function updateEventHits(){
+    const events = els.body.querySelectorAll('.event');
+    events.forEach(e=>{
+      const names = (e.dataset.names || '').split(',').filter(Boolean);
+      let any = false;
+      e.querySelectorAll('.namechip').forEach(span=>{
+        const nm = span.dataset.name || '';
+        const skills = (SKILLS_BY_NAME[nm] || []);
+        const on = selectedSkill ? skills.includes(selectedSkill) : false;
+        span.classList.toggle('on', on);
+        any = any || on;
+      });
+      e.classList.toggle('hit', selectedSkill && any); // outline only
+    });
+  }
+
+  function formatHour(h24){
+    const ampm = h24>=12 ? 'PM' : 'AM';
+    const h = ((h24+11)%12)+1;
+    return `${h} ${ampm}`;
+  }
+  function fmtTime(totalMins){
+    let m = totalMins % 60;
+    let h24 = Math.floor(totalMins / 60) % 24;
+    const ampm = h24>=12 ? 'PM' : 'AM';
+    const h = ((h24+11)%12)+1;
+    return `${h}${m?':'+String(m).padStart(2,'0'):''} ${ampm}`;
+  }
+  function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function escAttr(s){ return (s==null?'':String(s)).replace(/"/g,'&quot;'); }
+
+  // Init
+  renderChips();
+  render();
+})();
+</script>
+</body>
+</html>
