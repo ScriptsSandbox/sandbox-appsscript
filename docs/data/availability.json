@@ -1,5 +1,5 @@
 {
-  "updated": "2026-01-20T18:50:46.796Z",
+  "updated": "2026-01-20T18:55:45.352Z",
   "tz": "America/Los_Angeles",
   "window": {
     "start": "2026-01-19T08:00:00.000Z",
@@ -19,6 +19,25 @@
     "Woodworking"
   ],
   "people": [
+    {
+      "name": "Arnav",
+      "location": "Main Room",
+      "skills": [
+        "3D Printing",
+        "Fusion 360",
+        "Laser Cutting"
+      ],
+      "available": [
+        {
+          "start": "2026-01-21T17:00:00.000Z",
+          "end": "2026-01-22T00:00:00.000Z"
+        },
+        {
+          "start": "2026-01-23T17:00:00.000Z",
+          "end": "2026-01-24T00:00:00.000Z"
+        }
+      ]
+    },
     {
       "name": "Bryan",
       "location": "Main Room",
