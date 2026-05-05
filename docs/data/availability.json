@@ -1,5 +1,5 @@
 {
-  "updated": "2026-05-05T15:45:45.892Z",
+  "updated": "2026-05-05T15:50:45.516Z",
   "tz": "America/Los_Angeles",
   "window": {
     "start": "2026-05-04T07:00:00.000Z",
@@ -19,6 +19,21 @@
     "Woodworking"
   ],
   "people": [
+    {
+      "name": "Arnav",
+      "location": "Main Room",
+      "skills": [
+        "3D Printing",
+        "Fusion 360",
+        "Laser Cutting"
+      ],
+      "available": [
+        {
+          "start": "2026-05-05T16:00:00.000Z",
+          "end": "2026-05-06T00:00:00.000Z"
+        }
+      ]
+    },
     {
       "name": "Bryan",
       "location": "changed bc of midterm",
