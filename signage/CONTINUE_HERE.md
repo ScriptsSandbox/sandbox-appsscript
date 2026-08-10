@@ -4,6 +4,8 @@ This file is the durable handoff for continuing the project without the original
 
 ## Project identity
 
+- Canonical repository: `https://github.com/ScriptsSandbox/sandbox-appsscript/tree/main/signage`
+- Repository folder: `signage/`
 - Local source folder: `/Users/ritterratter/Documents/Codex/2026-08-06/referenced-chatgpt-conversation-this-is-an`
 - Displays: Sandbox Classroom and Mezzanine Conference Table signage, 3840 × 2160, 16:9
 - Classroom Raspberry Pi: `sandbox@sandbox-signage-classroom.local`, profile `classroom`
@@ -112,6 +114,6 @@ On networks that block `.local` discovery or local SSH, use the Raspberry Pi Con
 - `src/styles.css`: fixed-canvas layout and visual system
 - `tests/`: executable behavior specifications
 
-## Backup requirement
+## Source and configuration backup
 
-Back up this entire folder somewhere other than this Mac. The `.env` file is hidden and excluded from Git, but contains the deployed feed configuration required by a new installation. A private Git repository is appropriate for the source, with `.env` backed up separately in a secure location.
+The application source is maintained in the `signage/` directory of `ScriptsSandbox/sandbox-appsscript`. The `.env` file is deliberately excluded from Git because it contains the deployed feed configuration required by a new installation. Back up `.env` separately in a secure location; do not commit it.
