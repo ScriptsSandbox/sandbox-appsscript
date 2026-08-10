@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Scripps Sandbox Signage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;700&family=Source+Sans+3:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main id="display" aria-live="polite"></main>
+    <aside id="controls" class="controls" hidden>
+      <label>
+        Scenario
+        <select id="scenario-select"></select>
+      </label>
+      <label>
+        Time <output id="time-output"></output>
+        <input id="time-slider" type="range" min="0" max="1439" step="1" />
+      </label>
+    </aside>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
