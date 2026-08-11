@@ -95,7 +95,7 @@ test("multiple bookings and open windows are listed on separate lines", () => {
   assert.equal(data.workdays[1].summary, "Open 09:00–11:00\nOpen 13:00–16:00");
 });
 
-test("mezzanine reservation profile treats an empty calendar as available", () => {
+test("mezzanine is closed when the access calendar has no opening", () => {
   const data = normalizeGoogleFeed({
     displayId: "mezzanine",
     displayMode: "reservations",
@@ -107,8 +107,27 @@ test("mezzanine reservation profile treats an empty calendar as available", () =
 
   assert.equal(data.display.profile, "mezzanine");
   assert.equal(data.display.activityLabel, "mezzanine conference table");
-  assert.equal(data.day.events.length, 0);
+  assert.equal(data.day.events.length, 1);
+  assert.equal(data.day.events[0].type, "closure");
+  assert.deepEqual(data.day.accessWindows, []);
   assert.equal(data.day.availableTitle, "conference table available");
+  assert.equal(data.workdays[0].summary, "Closed");
+});
+
+test("mezzanine is available within a Makerspace access window", () => {
+  const data = normalizeGoogleFeed({
+    displayId: "mezzanine",
+    displayMode: "reservations",
+    roomName: "H-Lab - 2 - Mezzanine Conference Table (12)",
+    settings: { timezone: "America/Los_Angeles", display_open_time: "09:00", display_close_time: "17:00" },
+    roomEvents: [],
+    accessEvents: [
+      { id: "open", title: "Door Open", mode: "door_open", start: "2026-08-10T09:00:00-07:00", end: "2026-08-10T17:00:00-07:00" },
+    ],
+  }, { now });
+
+  assert.deepEqual(data.day.accessWindows, [{ start: "09:00", end: "17:00" }]);
+  assert.equal(data.day.events.length, 0);
   assert.equal(data.workdays[0].summary, "Available");
 });
 
@@ -121,7 +140,9 @@ test("mezzanine reservation profile lists every reservation on separate lines", 
       { id: "one", title: "Plankton Imaging Meeting", start: "2026-08-10T10:00:00-07:00", end: "2026-08-10T11:00:00-07:00", allDay: false },
       { id: "two", title: "Coastal Sensors Review", start: "2026-08-10T14:00:00-07:00", end: "2026-08-10T15:00:00-07:00", allDay: false },
     ],
-    accessEvents: [],
+    accessEvents: [
+      { id: "open", title: "Door Open", mode: "door_open", start: "2026-08-10T09:00:00-07:00", end: "2026-08-10T17:00:00-07:00" },
+    ],
   }, { now });
 
   assert.equal(data.workdays[0].summary, "Plankton Imaging Meeting\nCoastal Sensors Review");

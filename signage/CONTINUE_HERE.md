@@ -46,7 +46,8 @@ Then describe the desired change. The previous chat is not required.
 - `Sandbox Access` events titled/classified as `door_open` define public access windows.
 - An empty access-calendar day is closed.
 - Time outside a `door_open` event is closed.
-- The mezzanine ignores Sandbox Access; an empty reservation day means available.
+- The mezzanine is available only during a Sandbox Access `door_open` window; an empty access-calendar day is closed on both displays.
+- Both displays show a 20-minute opening countdown and a 15-minute closing countdown based on the actual access window. Closed and pre-opening states are monochrome.
 - Access events classified as closed or maintenance override open windows.
 - Google Apps Script provides a display-safe public feed; deployment details are in `PHASE2_SETUP.md`.
 - NOAA station 9410230 provides La Jolla tide predictions and water temperature.

@@ -1,6 +1,7 @@
 import {
   deriveDisplayState,
   formatClockParts,
+  formatFriendlyTime,
   formatTime,
   interpolateTide,
   timelinePercent,
@@ -113,6 +114,20 @@ function renderTimelineTicks(state) {
 function nextUp(state, data) {
   const labels = displayLabels(data);
   const spaceTitle = labels.space.toUpperCase();
+  if (state.statusKind === "opening") {
+    return {
+      kicker: "Today",
+      title: `OPENING AT ${formatFriendlyTime(state.nextAccessWindow.startMinutes)}`,
+      meta: `${state.nextAccessWindow.startMinutes - currentData.nowMinutes} minutes remaining`,
+    };
+  }
+  if (state.statusKind === "closing") {
+    return {
+      kicker: "Today",
+      title: `CLOSING AT ${formatFriendlyTime(state.currentAccessWindow.endMinutes)}`,
+      meta: `${state.currentAccessWindow.endMinutes - currentData.nowMinutes} minutes remaining`,
+    };
+  }
   if (state.currentEvent) {
     return {
       kicker: "In progress",
@@ -122,9 +137,6 @@ function nextUp(state, data) {
   }
   if (state.statusKind === "closed") {
     return { kicker: "Today", title: `${spaceTitle} CLOSED`, meta: state.detail };
-  }
-  if (state.statusKind === "closing") {
-    return { kicker: "Today", title: `CLOSING AT ${formatTime(state.close)}`, meta: `${state.close - currentData.nowMinutes} minutes remaining` };
   }
   if (!state.nextEvent) return { kicker: "Today", title: `${spaceTitle} AVAILABLE`, meta: `Open until ${formatTime(state.close)}` };
   return {
@@ -168,7 +180,7 @@ function render() {
     <header class="main-header">
       <p class="maker-label">${escapeHtml(labels.maker)}</p>
       <h1 class="activity-label">${escapeHtml(labels.activity)}</h1>
-      <p class="availability">${state.status}</p>
+      <p class="availability">${escapeHtml(state.status)}</p>
       <p class="status-detail">${escapeHtml(state.detail)}</p>
     </header>
 

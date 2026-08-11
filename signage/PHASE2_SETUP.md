@@ -46,6 +46,6 @@ The health endpoint at [http://127.0.0.1:4173/api/health](http://127.0.0.1:4173/
 - Sandbox Access `door_open` events define the hours when the space is open. Empty days and time outside those events are closed.
 - Sandbox Access `closed` and `maintenance` events override open windows and block the classroom timeline.
 - Sandbox Access `pickup_only` and `poster_pickup` events do not create general classroom availability.
-- An active `closed` or `maintenance` LiveStatus override temporarily blocks the classroom until its expiration time.
-- Mezzanine reservations come only from **H-Lab - 2 - Mezzanine Conference Table (12)**. The access calendar and classroom LiveStatus do not restrict that display; no reservation means the table is available during its displayed day.
+- An active `closed` or `maintenance` LiveStatus override temporarily blocks both displays until its expiration time.
+- Mezzanine reservations come only from **H-Lab - 2 - Mezzanine Conference Table (12)**. The table is available only within a Sandbox Access `door_open` window; outside those windows it is closed with the rest of the Makerspace.
 - NOAA station **9410230 La Jolla** supplies tide predictions and water temperature.

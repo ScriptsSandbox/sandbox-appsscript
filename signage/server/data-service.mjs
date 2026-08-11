@@ -205,13 +205,13 @@ function summarizeWorkday(dateString, roomEvents, accessOpenings, accessClosures
   return accessOpenings.map((event) => `Open ${event.start}–${event.end}`).join("\n");
 }
 
-function summarizeReservationDay(dateString, roomEvents, settings) {
+function summarizeReservationDay(dateString, roomEvents, accessOpenings, accessClosures, settings) {
   const events = roomEvents
     .map((event) => eventForDay(event, dateString, settings.timezone, settings.openTime, settings.closeTime))
     .filter(Boolean);
-  if (events.some((event) => event.type === "closure")) return "Closed";
+  if (!accessOpenings.length || events.some((event) => event.type === "closure")) return "Closed";
   const reservations = events.filter((event) => event.type !== "closure");
-  if (!reservations.length) return "Available";
+  if (!reservations.length) return accessClosures.length ? "Limited access" : "Available";
   return reservations.map((event) => event.title).join("\n");
 }
 
@@ -244,29 +244,28 @@ export function normalizeGoogleFeed(feed, { now = new Date() } = {}) {
   const settings = parseSettings(feed.settings);
   const display = displayMetadata(feed);
   display.timezone = settings.timezone;
-  const reservationOnly = display.mode === "reservations";
   const today = isoDate(now, settings.timezone);
   const parts = zonedParts(now, settings.timezone);
   const roomEvents = feed.roomEvents || [];
   const todayRoomEvents = roomEvents
     .map((event) => eventForDay(event, today, settings.timezone, settings.openTime, settings.closeTime))
     .filter(Boolean);
-  const todayOpenings = reservationOnly ? [] : activeAccessOpenings(feed, today, settings);
-  const closures = reservationOnly ? [] : [
+  const todayOpenings = activeAccessOpenings(feed, today, settings);
+  const closures = [
     ...closedOutsideOpenings(todayOpenings, today, settings),
     ...activeAccessClosures(feed, today, settings),
   ];
-  const override = reservationOnly ? null : liveOverrideClosure(feed, now, settings);
+  const override = liveOverrideClosure(feed, now, settings);
   if (override) closures.push(override);
 
   const workdays = workdayDates(today).map((dateString) => {
-    const dayOpenings = reservationOnly ? [] : activeAccessOpenings(feed, dateString, settings);
-    const dayClosures = reservationOnly ? [] : activeAccessClosures(feed, dateString, settings);
+    const dayOpenings = activeAccessOpenings(feed, dateString, settings);
+    const dayClosures = activeAccessClosures(feed, dateString, settings);
     return {
       date: dateString,
       day: weekdayFor(dateString),
-      summary: reservationOnly
-        ? summarizeReservationDay(dateString, roomEvents, settings)
+      summary: display.mode === "reservations"
+        ? summarizeReservationDay(dateString, roomEvents, dayOpenings, dayClosures, settings)
         : summarizeWorkday(dateString, roomEvents, dayOpenings, dayClosures, settings),
     };
   });
@@ -284,6 +283,7 @@ export function normalizeGoogleFeed(feed, { now = new Date() } = {}) {
     day: {
       opensAt: settings.openTime,
       closesAt: settings.closeTime,
+      accessWindows: todayOpenings.map((event) => ({ start: event.start, end: event.end })),
       availableTitle: display.availableTitle,
       events: [...todayRoomEvents, ...closures],
     },

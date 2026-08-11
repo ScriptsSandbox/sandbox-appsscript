@@ -32,6 +32,7 @@ const base = {
   day: {
     opensAt: "09:00",
     closesAt: "18:00",
+    accessWindows: [{ start: "09:00", end: "18:00" }],
     availableTitle: "classroom available",
     events: [
       { id: "workshop", title: "3D printing workshop", shortTitle: "3D printing workshop", type: "workshop", start: "14:00", end: "16:00" },
@@ -66,7 +67,7 @@ export const scenarios = {
     data: {
       ...clone(base),
       nowMinutes: 10 * 60 + 18,
-      day: { opensAt: "09:00", closesAt: "18:00", events: [] },
+      day: { opensAt: "09:00", closesAt: "18:00", accessWindows: [{ start: "09:00", end: "18:00" }], events: [] },
       workdays: [{ day: "MON", summary: "Available all day" }, ...workdays.slice(1)],
     },
   },
@@ -78,6 +79,7 @@ export const scenarios = {
       day: {
         opensAt: "09:00",
         closesAt: "18:00",
+        accessWindows: [{ start: "09:00", end: "18:00" }],
         events: [
           { id: "class", title: "SIO 176", shortTitle: "SIO 176", type: "class", start: "09:30", end: "11:00" },
           { id: "workshop", title: "Laser cutter workshop", shortTitle: "laser workshop", type: "workshop", start: "14:00", end: "15:30" },
@@ -89,7 +91,11 @@ export const scenarios = {
   },
   closingSoon: {
     label: "Closing soon",
-    data: { ...clone(base), nowMinutes: 17 * 60 + 42 },
+    data: { ...clone(base), nowMinutes: 17 * 60 + 50 },
+  },
+  openingSoon: {
+    label: "Opening soon",
+    data: { ...clone(base), nowMinutes: 8 * 60 + 48 },
   },
   currentlyBooked: {
     label: "Class in progress",
@@ -103,6 +109,7 @@ export const scenarios = {
       day: {
         opensAt: "09:00",
         closesAt: "18:00",
+        accessWindows: [],
         events: [{ id: "closure", title: "Classroom closed", type: "closure", allDay: true }],
       },
       workdays: [{ day: "MON", summary: "Closed" }, ...workdays.slice(1)],
@@ -135,6 +142,7 @@ export const scenarios = {
       day: {
         opensAt: "09:00",
         closesAt: "17:00",
+        accessWindows: [{ start: "09:00", end: "17:00" }],
         availableTitle: "conference table available",
         events: [
           { id: "lab-meeting", title: "Plankton imaging meeting", shortTitle: "Plankton imaging", type: "booking", start: "11:00", end: "12:30" },
@@ -147,6 +155,38 @@ export const scenarios = {
         { day: "WED", summary: "Student design review" },
         { day: "THU", summary: "Faculty meeting\nInstrument planning" },
         { day: "FRI", summary: "Available" },
+      ],
+    },
+  },
+  mezzanineClosed: {
+    label: "Mezzanine · Makerspace closed",
+    data: {
+      ...clone(base),
+      display: {
+        id: "mezzanine-conference-table",
+        profile: "mezzanine",
+        mode: "reservations",
+        roomName: "H-Lab - 2 - Mezzanine Conference Table (12)",
+        timezone: "America/Los_Angeles",
+        makerLabel: "SCRIPPS SANDBOX MAKERSPACE",
+        activityLabel: "mezzanine conference table",
+        spaceLabel: "conference table",
+        availableTitle: "conference table available",
+      },
+      nowMinutes: 12 * 60,
+      day: {
+        opensAt: "09:00",
+        closesAt: "17:00",
+        accessWindows: [],
+        availableTitle: "conference table available",
+        events: [{ id: "default-closed-mezzanine", title: "Makerspace closed", type: "closure", allDay: true }],
+      },
+      workdays: [
+        { day: "MON", summary: "Closed" },
+        { day: "TUE", summary: "Available" },
+        { day: "WED", summary: "Student design review" },
+        { day: "THU", summary: "Faculty meeting\nInstrument planning" },
+        { day: "FRI", summary: "Closed" },
       ],
     },
   },

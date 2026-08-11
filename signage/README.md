@@ -7,7 +7,7 @@ This is the shared, data-driven 3840 × 2160 application for the Sandbox classro
 | Profile | Calendar | Empty calendar means | Palette |
 | --- | --- | --- | --- |
 | `classroom` | H-Lab - 1 - Sandbox Classroom (24) | Closed unless Sandbox Access has a Door Open event | Orange, aqua, cream, black |
-| `mezzanine` | H-Lab - 2 - Mezzanine Conference Table (12) | Available | Navy `#182B49`, warm cream `#F5F0E6`, black, white |
+| `mezzanine` | H-Lab - 2 - Mezzanine Conference Table (12) | Closed unless Sandbox Access has a Door Open event | Navy `#182B49`, warm cream `#F5F0E6`, black, white |
 
 ## Run it locally
 
@@ -57,6 +57,8 @@ The renderer receives one normalized display object containing:
 - the next five workday summaries
 - water temperature, today's La Jolla tide points, and locally reported underwater visibility
 - connectivity, staleness, and last-updated state
+
+Both displays become monochrome while the Makerspace is closed. During the last 20 minutes before an access window they show an opening countdown; during the last 15 minutes of an access window they show a closing countdown. These transitions use the actual Sandbox Access event times, so temporary summer, finals, and holiday hours require no application change.
 
 The server caches its last successful normalized response in `cache/display-data.json`. The browser also caches its last successful response in local storage. If either Google or NOAA is unavailable, the screen keeps showing the most recent reliable information and quietly marks it as stale.
 

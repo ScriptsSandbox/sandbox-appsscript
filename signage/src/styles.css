@@ -59,6 +59,15 @@ body {
   --ink: #000000;
 }
 
+.signage-canvas.status-closed,
+.signage-canvas.status-opening {
+  --aqua: #d8d8d4;
+  --aqua-current: #555555;
+  --orange: #454545;
+  --cream: #f5f5f0;
+  --ink: #0b0b0b;
+}
+
 .environment-rail {
   position: absolute;
   inset: 0 auto 0 0;
@@ -216,17 +225,11 @@ body {
   text-transform: none;
 }
 
-.status-closing .availability { font-size: 205px; }
-.status-closing .main-header::after {
-  content: "";
-  display: block;
-  width: 360px;
-  height: 18px;
-  margin-top: 55px;
-  background: var(--orange);
-}
+.status-opening .availability,
+.status-closing .availability { font-size: 168px; }
 .status-closed .availability,
 .status-booked .availability { font-size: 245px; }
+.status-opening .availability,
 .status-closing .availability,
 .status-closed .availability,
 .status-booked .availability { font-family: "Source Sans 3", Arial, sans-serif; }
@@ -473,12 +476,3 @@ body {
 .controls label:last-child { margin-bottom: 0; }
 .controls select,
 .controls input { width: 100%; }
-
-@media (prefers-reduced-motion: no-preference) {
-  .status-closing .main-header::after { animation: closing-pulse 4s ease-in-out infinite; }
-}
-
-@keyframes closing-pulse {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
-}

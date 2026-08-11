@@ -17,6 +17,15 @@ export function formatClockParts(minutes) {
   return { hours, minutes: mins };
 }
 
+export function formatFriendlyTime(minutes) {
+  const normalized = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  const hour24 = Math.floor(normalized / 60);
+  const mins = normalized % 60;
+  const suffix = hour24 < 12 ? "AM" : "PM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(mins).padStart(2, "0")} ${suffix}`;
+}
+
 export function buildScheduleSegments(day) {
   const open = timeToMinutes(day.opensAt);
   const close = timeToMinutes(day.closesAt);
@@ -91,12 +100,41 @@ export function deriveDisplayState(data, nowMinutes = data.nowMinutes) {
   const nextEvent = events
     .filter((event) => event.type !== "closure" && event.startMinutes > nowMinutes)
     .sort((a, b) => a.startMinutes - b.startMinutes)[0] ?? null;
+  const accessWindows = (Array.isArray(data.day.accessWindows)
+    ? data.day.accessWindows
+    : [{ start: data.day.opensAt, end: data.day.closesAt }])
+    .map((window) => ({
+      startMinutes: timeToMinutes(window.start),
+      endMinutes: timeToMinutes(window.end),
+    }))
+    .filter((window) => window.endMinutes > window.startMinutes)
+    .sort((a, b) => a.startMinutes - b.startMinutes);
+  const currentAccessWindow = accessWindows.find(
+    (window) => nowMinutes >= window.startMinutes && nowMinutes < window.endMinutes,
+  ) ?? null;
+  const nextAccessWindow = accessWindows.find((window) => window.startMinutes > nowMinutes) ?? null;
+  const blockingClosure = closure && !String(closure.id || "").startsWith("default-closed-")
+    ? closure
+    : null;
+  const nextOpeningBlocked = nextAccessWindow && events.some((event) => (
+    event.type === "closure"
+    && !String(event.id || "").startsWith("default-closed-")
+    && (event.allDay || (event.startMinutes <= nextAccessWindow.startMinutes && event.endMinutes > nextAccessWindow.startMinutes))
+  ));
+  const minutesUntilOpening = nextAccessWindow ? Math.ceil(nextAccessWindow.startMinutes - nowMinutes) : null;
+  const minutesUntilClosing = currentAccessWindow ? Math.ceil(currentAccessWindow.endMinutes - nowMinutes) : null;
 
   let status = "AVAILABLE";
   let statusKind = "available";
-  let detail = nextEvent ? `until ${formatTime(nextEvent.startMinutes)}` : `until ${formatTime(close)}`;
+  let detail = currentAccessWindow && nextEvent && nextEvent.startMinutes < currentAccessWindow.endMinutes
+    ? `until ${formatTime(nextEvent.startMinutes)}`
+    : `until ${formatTime(currentAccessWindow?.endMinutes ?? close)}`;
 
-  if (closure) {
+  if (!blockingClosure && !currentAccessWindow && !nextOpeningBlocked && minutesUntilOpening > 0 && minutesUntilOpening <= 20) {
+    status = `OPENING IN ${minutesUntilOpening} MIN`;
+    statusKind = "opening";
+    detail = `Makerspace opens at ${formatFriendlyTime(nextAccessWindow.startMinutes)}.`;
+  } else if (closure) {
     status = "CLOSED";
     statusKind = "closed";
     detail = closure.title;
@@ -108,14 +146,20 @@ export function deriveDisplayState(data, nowMinutes = data.nowMinutes) {
     status = "CLOSED";
     statusKind = "closed";
     detail = "for the day";
+  } else if (!currentAccessWindow) {
+    status = "CLOSED";
+    statusKind = "closed";
+    detail = nextAccessWindow
+      ? `Makerspace opens at ${formatFriendlyTime(nextAccessWindow.startMinutes)}.`
+      : "Makerspace closed.";
+  } else if (minutesUntilClosing > 0 && minutesUntilClosing <= 15) {
+    status = `CLOSING IN ${minutesUntilClosing} MIN`;
+    statusKind = "closing";
+    detail = `Makerspace closes at ${formatFriendlyTime(currentAccessWindow.endMinutes)}.`;
   } else if (currentEvent) {
     status = "IN USE";
     statusKind = "booked";
     detail = `${currentEvent.title} · until ${formatTime(currentEvent.endMinutes)}`;
-  } else if (close - nowMinutes <= 30) {
-    status = "CLOSING SOON";
-    statusKind = "closing";
-    detail = `${data.display?.spaceLabel || "space"} closes at ${formatTime(close)}`;
   }
 
   return {
@@ -126,6 +170,8 @@ export function deriveDisplayState(data, nowMinutes = data.nowMinutes) {
     detail,
     currentEvent,
     nextEvent,
+    currentAccessWindow,
+    nextAccessWindow,
     segments: buildScheduleSegments(data.day),
   };
 }

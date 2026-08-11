@@ -50,25 +50,25 @@ function buildSignageFeed_(display) {
   const roomEvents = roomCalendar.getEvents(window.start, window.end).map(function(event) {
     return eventRecord_(event, timezone);
   });
-  let accessEvents = [];
-  if (display.mode === "access") {
-    const accessCalendar = CalendarApp.getCalendarById(settings.access_calendar_id || SIGNAGE_CONFIG.accessCalendarId);
-    if (!accessCalendar) throw new Error("Sandbox Access calendar is unavailable");
-    accessEvents = accessCalendar.getEvents(window.start, window.end).map(function(event) {
-      const record = eventRecord_(event, timezone);
-      record.mode = classifyAccessEvent_(record.title, keywords, modes);
-      return record;
-    });
-  }
+  // Both displays are inside the Makerspace. The access calendar therefore
+  // defines when either room may be shown as available, while each room's own
+  // calendar remains authoritative for its bookings.
+  const accessCalendar = CalendarApp.getCalendarById(settings.access_calendar_id || SIGNAGE_CONFIG.accessCalendarId);
+  if (!accessCalendar) throw new Error("Sandbox Access calendar is unavailable");
+  const accessEvents = accessCalendar.getEvents(window.start, window.end).map(function(event) {
+    const record = eventRecord_(event, timezone);
+    record.mode = classifyAccessEvent_(record.title, keywords, modes);
+    return record;
+  });
 
   return {
-    version: 1,
+    version: 2,
     generatedAt: isoDateTime_(new Date(), timezone),
     displayId: display.id,
     displayMode: display.mode,
     roomName: display.roomName,
     settings: settings,
-    liveStatus: display.mode === "access" ? normalizeLiveStatus_(liveStatus, timezone) : { mode: "auto", until: "", note: "" },
+    liveStatus: normalizeLiveStatus_(liveStatus, timezone),
     roomEvents: roomEvents,
     accessEvents: accessEvents,
   };
