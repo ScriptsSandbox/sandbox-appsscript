@@ -1,0 +1,60 @@
+{
+  "version": 2,
+  "generatedAt": "2026-08-10T20:00:00-07:00",
+  "displayId": "mezzanine",
+  "displayMode": "reservations",
+  "roomName": "H-Lab - 2 - Mezzanine Conference Table (12)",
+  "settings": {
+    "timezone": "America/Los_Angeles",
+    "status_cache_seconds": "60",
+    "display_open_time": "09:00",
+    "display_close_time": "17:00"
+  },
+  "liveStatus": {
+    "mode": "auto",
+    "until": "",
+    "note": ""
+  },
+  "roomEvents": [
+    {
+      "id": "mezzanine-2026-08-10-a",
+      "title": "Plankton Imaging Meeting",
+      "start": "2026-08-10T11:00:00-07:00",
+      "end": "2026-08-10T12:30:00-07:00",
+      "allDay": false
+    },
+    {
+      "id": "mezzanine-2026-08-10-b",
+      "title": "Coastal Sensors Project Review",
+      "start": "2026-08-10T14:00:00-07:00",
+      "end": "2026-08-10T15:00:00-07:00",
+      "allDay": false
+    }
+  ],
+  "accessEvents": [
+    {
+      "id": "access-2026-08-11",
+      "title": "Door Open – Independent Access",
+      "mode": "door_open",
+      "start": "2026-08-11T09:00:00-07:00",
+      "end": "2026-08-11T14:00:00-07:00",
+      "allDay": false
+    },
+    {
+      "id": "access-2026-08-12",
+      "title": "Door Open – Independent Access",
+      "mode": "door_open",
+      "start": "2026-08-12T09:00:00-07:00",
+      "end": "2026-08-12T14:00:00-07:00",
+      "allDay": false
+    },
+    {
+      "id": "access-2026-08-13",
+      "title": "Door Open – Independent Access",
+      "mode": "door_open",
+      "start": "2026-08-13T09:00:00-07:00",
+      "end": "2026-08-13T14:00:00-07:00",
+      "allDay": false
+    }
+  ]
+}
