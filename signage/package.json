@@ -1,0 +1,11 @@
+{
+  "name": "scripps-sandbox-signage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node server.mjs",
+    "serve:static": "python3 -m http.server 4173"
+  }
+}
