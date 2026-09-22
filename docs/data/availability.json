@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-22T21:05:45.387Z",
+  "updated": "2026-09-22T21:10:44.924Z",
   "tz": "America/Los_Angeles",
   "window": {
     "start": "2026-09-21T07:00:00.000Z",
@@ -19,6 +19,49 @@
     "Woodworking"
   ],
   "people": [
+    {
+      "name": "Arnav",
+      "location": "Main Room",
+      "skills": [
+        "3D Printing",
+        "Fusion 360",
+        "Laser Cutting"
+      ],
+      "available": [
+        {
+          "start": "2026-09-28T18:00:00.000Z",
+          "end": "2026-09-29T00:00:00.000Z"
+        },
+        {
+          "start": "2026-09-30T21:00:00.000Z",
+          "end": "2026-10-01T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "name": "Bryan",
+      "location": "Main Room",
+      "skills": [
+        "3D Printing",
+        "Fusion 360",
+        "Laser Cutting",
+        "3D Scanner"
+      ],
+      "available": [
+        {
+          "start": "2026-09-29T18:00:00.000Z",
+          "end": "2026-09-30T00:00:00.000Z"
+        },
+        {
+          "start": "2026-10-01T18:00:00.000Z",
+          "end": "2026-10-02T00:00:00.000Z"
+        },
+        {
+          "start": "2026-10-02T16:00:00.000Z",
+          "end": "2026-10-03T00:00:00.000Z"
+        }
+      ]
+    },
     {
       "name": "Riley",
       "location": "Main Room",
@@ -81,6 +124,24 @@
         {
           "start": "2026-10-02T16:00:00.000Z",
           "end": "2026-10-03T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "name": "Rita",
+      "location": "Main Room",
+      "skills": [
+        "3D Printing",
+        "Laser Cutting Shop Safety"
+      ],
+      "available": [
+        {
+          "start": "2026-09-30T17:00:00.000Z",
+          "end": "2026-09-30T21:30:00.000Z"
+        },
+        {
+          "start": "2026-10-02T17:30:00.000Z",
+          "end": "2026-10-02T21:30:00.000Z"
         }
       ]
     }
